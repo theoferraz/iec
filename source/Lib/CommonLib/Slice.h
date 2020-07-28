@@ -2631,7 +2631,7 @@ private:
   int                        m_iPOC;
   int                        m_iLastIDR;
   int                        m_prevGDRInSameLayerPOC;  //< the previous GDR in the same layer
-  int                        m_iAssociatedIRAP;
+  int                        m_iAssociatedIRAP;        //< associated IRAP POC
   NalUnitType                m_iAssociatedIRAPType;
   int                        m_prevGDRSubpicPOC;
   int                        m_prevIRAPSubpicPOC;
@@ -2790,7 +2790,7 @@ public:
   int                         getPrevIRAPSubpicPOC() const                           { return m_prevIRAPSubpicPOC;                                   }
   void                        setPrevIRAPSubpicType(NalUnitType type)                { m_prevIRAPSubpicType = type;                                  }
   NalUnitType                 getPrevIRAPSubpicType() const                          { return m_prevIRAPSubpicType;                                  }
-  void                        checkSubpicTypeConstraints(PicList& rcListPic, const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int prevIRAPSubpicDecOrderNo);
+  void                        checkSubpicTypeConstraints(PicList& rcListPic, const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int prevIRAPSubpicDecOrderNo, const bool lastNoOutputBeforeRecoveryFlag );
   SliceType                   getSliceType() const                                   { return m_eSliceType;                                          }
   int                         getPOC() const                                         { return m_iPOC;                                                }
   int                         getSliceQp() const                                     { return m_iSliceQp;                                            }
@@ -2844,7 +2844,7 @@ public:
   bool                        isIDRorBLA() const { return (getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL) || (getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP); }
   void                        checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int pocCRA, PicList& rcListPic);
   void                        checkSTSA(PicList& rcListPic);
-  void                        checkRPL(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int associatedIRAPDecodingOrderNumber, PicList& rcListPic);
+  void                        checkRPL(const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int associatedIRAPDecodingOrderNumber, PicList& rcListPic, const bool lastNoOutputBeforeRecoveryFlag );
   void                        decodingRefreshMarking(int& pocCRA, bool& bRefreshPending, PicList& rcListPic, const bool bEfficientFieldIRAPEnabled);
   void                        setSliceType( SliceType e )                            { m_eSliceType        = e;                                      }
   void                        setSliceQp( int i )                                    { m_iSliceQp          = i;                                      }
