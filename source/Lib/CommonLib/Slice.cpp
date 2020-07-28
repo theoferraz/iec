@@ -695,14 +695,14 @@ void Slice::checkRPL(const ReferencePictureList* pRPL0, const ReferencePictureLi
       CHECK( pcRefPic == m_pcPic || nonReferencePictureFlag, "The picture referred to by each entry in RefPicList[ 0 ] or RefPicList[ 1 ] shall not be the current picture and shall have ph_non_ref_pic_flag equal to 0" );
 #endif
 
-      if( !m_pcPPS->getMixedNaluTypesInPicFlag() && !(
+      if( !(
 #if JVET_S0123_IDR_UNAVAILABLE_REFERENCE
-      ( ( m_eNalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL || m_eNalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP ) && ( m_pcSPS->getIDRRefParamListPresent() || m_pcPPS->getRplInfoInPhFlag() ) ) // an IDR picture with sps_idr_rpl_present_flag equal to 1 or pps_rpl_info_in_ph_flag equal to 1
+      ( !m_pcPPS->getMixedNaluTypesInPicFlag() && ( m_eNalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL || m_eNalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP ) && ( m_pcSPS->getIDRRefParamListPresent() || m_pcPPS->getRplInfoInPhFlag() ) ) // an IDR picture with sps_idr_rpl_present_flag equal to 1 or pps_rpl_info_in_ph_flag equal to 1
 #endif
-        || ( m_eNalUnitType == NAL_UNIT_CODED_SLICE_CRA && m_pcPicHeader->getNoOutputBeforeRecoveryFlag() ) // a CRA picture with NoOutputBeforeRecoveryFlag equal to 1
+        || ( !m_pcPPS->getMixedNaluTypesInPicFlag() && m_eNalUnitType == NAL_UNIT_CODED_SLICE_CRA && m_pcPicHeader->getNoOutputBeforeRecoveryFlag() ) // a CRA picture with NoOutputBeforeRecoveryFlag equal to 1
         || ( m_iPOC < m_iAssociatedIRAP && m_iAssociatedIRAPType == NAL_UNIT_CODED_SLICE_CRA && lastNoOutputBeforeRecoveryFlag ) // a picture, associated with a CRA picture with NoOutputBeforeRecoveryFlag equal to 1, that precedes, in decoding order, the leading pictures associated with the same CRA picture
         || ( ( m_eNalUnitType == NAL_UNIT_CODED_SLICE_RADL || m_eNalUnitType == NAL_UNIT_CODED_SLICE_RASL ) && m_iAssociatedIRAPType == NAL_UNIT_CODED_SLICE_CRA && lastNoOutputBeforeRecoveryFlag ) // a leading picture associated with a CRA picture with NoOutputBeforeRecoveryFlag equal to 1
-        || ( m_eNalUnitType == NAL_UNIT_CODED_SLICE_GDR && m_pcPicHeader->getNoOutputBeforeRecoveryFlag() ) // a GDR picture with NoOutputBeforeRecoveryFlag equal to 1
+        || ( !m_pcPPS->getMixedNaluTypesInPicFlag() && m_eNalUnitType == NAL_UNIT_CODED_SLICE_GDR && m_pcPicHeader->getNoOutputBeforeRecoveryFlag() ) // a GDR picture with NoOutputBeforeRecoveryFlag equal to 1
         || ( m_pcPicHeader->getRecoveryPocCnt() >= 0 && m_iPOC < m_pcPicHeader->getRecoveryPocCnt() && lastNoOutputBeforeRecoveryFlag ) // a recovering picture of a GDR picture with NoOutputBeforeRecoveryFlag equal to 1 and nuh_layer_id equal to layerId
         ) )
       {
@@ -1529,7 +1529,7 @@ void Slice::checkSubpicTypeConstraints( PicList& rcListPic, const ReferencePictu
       {
         CHECK( refPicPOC < m_prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture follows an IRAP subpicture having the same value "
           "of nuh_layer_id and the same value of subpicture index and the leading subpictures, if any, associated with that IRAP subpicture in both decoding and output order, "
-          "there shall be no picture referred to by an entry in RefPicList[ 0 ] that precedes the picture containing that IRAP subpicture in output order or decoding order" );
+          "there shall be no picture referred to by an entry in RefPicList[ 0 ] or RefPicList[ 1 ] that precedes the picture containing that IRAP subpicture in output order or decoding order" );
       }
 
       CHECK( !pcRefPic, "Wrong reference picture" );
@@ -1554,14 +1554,14 @@ void Slice::checkSubpicTypeConstraints( PicList& rcListPic, const ReferencePictu
         if( m_prevIRAPSubpicPOC < m_iPOC && !m_pcSPS->getFieldSeqFlag() )
         {
           CHECK( refPicPOC < m_prevIRAPSubpicPOC || refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture follows an IRAP subpicture having the same value "
-            "of nuh_layer_id and the same value of subpicture index in both decoding and output order, there shall be no picture referred to by an active entry in RefPicList[ 0 ] "
+            "of nuh_layer_id and the same value of subpicture index in both decoding and output order, there shall be no picture referred to by an active entry in RefPicList[ 0 ] or RefPicList[ 1 ] "
             "that precedes the picture containing that IRAP subpicture in output order or decoding order" );
         }
 
         if( m_eNalUnitType == NAL_UNIT_CODED_SLICE_RADL )
         {
           CHECK( refPicDecodingOrderNumber < prevIRAPSubpicDecOrderNo, "When the current subpicture, with nuh_layer_id equal to a particular value layerId and subpicture index equal "
-            "to a particular value subpicIdx, is a RADL subpicture, there shall be no active entry in RefPicList[ 0 ] that is a picture that precedes the picture containing the"
+            "to a particular value subpicIdx, is a RADL subpicture, there shall be no active entry in RefPicList[ 0 ] or RefPicList[ 1 ] that is a picture that precedes the picture containing the"
             "associated IRAP subpicture in decoding order" );
 
           if( pcRefPic->layerId == m_nuhLayerId )
@@ -1571,7 +1571,7 @@ void Slice::checkSubpicTypeConstraints( PicList& rcListPic, const ReferencePictu
               if( pcRefPic->sliceSubpicIdx[i] == curSubpicIdx )
               {
                 CHECK( pcRefPic->slices[i]->getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL, "When the current subpicture, with nuh_layer_id equal to a particular value layerId and "
-                  "subpicture index equal to a particular value subpicIdx, is a RADL subpicture, there shall be no active entry in RefPicList[ 0 ] that is a picture with "
+                  "subpicture index equal to a particular value subpicIdx, is a RADL subpicture, there shall be no active entry in RefPicList[ 0 ] or RefPicList[ 1 ] that is a picture with "
                   "nuh_layer_id equal to layerId containing a RASL subpicture with subpicture index equal to subpicIdx" );
               }
             }
