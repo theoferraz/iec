@@ -136,8 +136,7 @@ protected:
 #endif
   bool      m_bIntraOnlyConstraintFlag;
   uint32_t  m_maxBitDepthConstraintIdc;
-  uint32_t  m_maxChromaFormatConstraintIdc;
-  bool      m_bFrameConstraintFlag;
+  int       m_maxChromaFormatConstraintIdc;
   bool      m_singleLayerConstraintFlag;
   bool      m_allLayersIndependentConstraintFlag;
   bool      m_noMrlConstraintFlag;
@@ -199,7 +198,7 @@ protected:
   uint32_t          m_bitDepthConstraint;
   ChromaFormat  m_chromaFormatConstraint;
   bool          m_onePictureOnlyConstraintFlag;
-  bool          m_intraConstraintFlag;
+  bool          m_intraOnlyConstraintFlag;
   bool          m_nonPackedConstraintFlag;
   bool          m_nonProjectedConstraintFlag;
   bool          m_noResChangeInClvsConstraintFlag;
@@ -308,7 +307,7 @@ protected:
   bool      m_dualTree;
   bool      m_LFNST;
   bool      m_useFastLFNST;
-  int       m_SubPuMvpMode;
+  bool      m_sbTmvpEnableFlag;
   bool      m_Affine;
   bool      m_AffineType;
   bool      m_PROF;
@@ -484,6 +483,9 @@ protected:
   bool      m_bUseBLambdaForNonKeyLowDelayPictures;
 
   HashType  m_decodedPictureHashSEIType;                      ///< Checksum mode for decoded picture hash SEI message
+#if JVET_R0294_SUBPIC_HASH
+  HashType  m_subpicDecodedPictureHashType;
+#endif
   bool      m_bufferingPeriodSEIEnabled;
   bool      m_pictureTimingSEIEnabled;
   bool      m_bpDeltasGOPStructure;

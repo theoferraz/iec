@@ -63,6 +63,9 @@ Slice::Slice()
 , m_eNalUnitType                  ( NAL_UNIT_CODED_SLICE_IDR_W_RADL )
 , m_pictureHeaderInSliceHeader   ( false )
 , m_eSliceType                    ( I_SLICE )
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+, m_noOutputOfPriorPicsFlag       ( 0 )
+#endif
 , m_iSliceQp                      ( 0 )
 , m_ChromaQpAdjEnabled            ( false )
 , m_lmcsEnabledFlag               ( 0 )
@@ -170,6 +173,10 @@ void Slice::initSlice()
   m_lmcsEnabledFlag = 0;
   m_explicitScalingListUsed = 0;
   initEqualRef();
+
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+  m_noOutputOfPriorPicsFlag = 0;
+#endif
 
   m_bCheckLDC = false;
 
@@ -1271,7 +1278,11 @@ void Slice::checkLeadingPictureRestrictions(PicList& rcListPic, const PPS& pps) 
     }
     const Slice* pcSlice = pcPic->slices[0];
 
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+    if (pcSlice->getPicHeader()->getPicOutputFlag() == 1 && !this->getNoOutputOfPriorPicsFlag() && pcPic->layerId == this->m_nuhLayerId)
+#else
     if (pcSlice->getPicHeader()->getPicOutputFlag() == 1 && !this->getPicHeader()->getNoOutputOfPriorPicsFlag() && pcPic->layerId == this->m_nuhLayerId)
+#endif
     {
       if ((nalUnitType == NAL_UNIT_CODED_SLICE_CRA || nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP || nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL) && !pps.getMixedNaluTypesInPicFlag())
       {
@@ -1418,15 +1429,20 @@ void Slice::checkSubpicTypeConstraints( PicList& rcListPic, const ReferencePictu
         }
       }
 
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
       if( ( m_eNalUnitType == NAL_UNIT_CODED_SLICE_CRA || m_eNalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP || m_eNalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL ) &&
-        !m_pcPicHeader->getNoOutputOfPriorPicsFlag() && isBufPicOutput == 1 && bufPic->layerId == m_nuhLayerId )
+        !m_noOutputOfPriorPicsFlag && isBufPicOutput && bufPic->layerId == m_nuhLayerId )
+#else
+      if( ( m_eNalUnitType == NAL_UNIT_CODED_SLICE_CRA || m_eNalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP || m_eNalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL ) &&
+        !m_pcPicHeader->getNoOutputOfPriorPicsFlag() && isBufPicOutput && bufPic->layerId == m_nuhLayerId )
+#endif
       {
         CHECK( bufPic->poc >= m_iPOC, "Any subpicture, with nuh_layer_id equal to a particular value layerId and subpicture index equal to a particular value subpicIdx, that "
           "precedes, in decoding order, an IRAP subpicture with nuh_layer_id equal to layerId and subpicture index equal to subpicIdx shall precede, in output order, the "
           "IRAP subpicture" );
       }
 
-      if( m_eNalUnitType == NAL_UNIT_CODED_SLICE_RADL && isBufPicOutput == 1 && bufPic->layerId == m_nuhLayerId &&
+      if( m_eNalUnitType == NAL_UNIT_CODED_SLICE_RADL && isBufPicOutput && bufPic->layerId == m_nuhLayerId &&
         m_prevIRAPSubpicPOC > bufSubpicPrevIRAPSubpicPOC && m_prevIRAPSubpicPOC != bufPic->poc )
       {
         CHECK( bufPic->poc >= m_iPOC, "Any subpicture, with nuh_layer_id equal to a particular value layerId and subpicture index equal to a particular value subpicIdx, that "
@@ -1434,8 +1450,13 @@ void Slice::checkSubpicTypeConstraints( PicList& rcListPic, const ReferencePictu
           "its associated RADL subpictures" );
       }
 
-      if( ( m_iPOC == m_pcPicHeader->getRecoveryPocCnt() + m_prevGDRSubpicPOC ) && !m_pcPicHeader->getNoOutputOfPriorPicsFlag() && isBufPicOutput == 1 &&
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+      if( ( m_iPOC == m_pcPicHeader->getRecoveryPocCnt() + m_prevGDRSubpicPOC ) && !m_noOutputOfPriorPicsFlag && isBufPicOutput &&
         bufPic->layerId == m_nuhLayerId && m_eNalUnitType != NAL_UNIT_CODED_SLICE_GDR && m_pcPicHeader->getRecoveryPocCnt() != -1 )
+#else
+      if( ( m_iPOC == m_pcPicHeader->getRecoveryPocCnt() + m_prevGDRSubpicPOC ) && !m_pcPicHeader->getNoOutputOfPriorPicsFlag() && isBufPicOutput &&
+        bufPic->layerId == m_nuhLayerId && m_eNalUnitType != NAL_UNIT_CODED_SLICE_GDR && m_pcPicHeader->getRecoveryPocCnt() != -1 )
+#endif
       {
         CHECK( bufPic->poc >= m_iPOC, "Any subpicture, with nuh_layer_id equal to a particular value layerId and subpicture index equal to a particular value subpicIdx, that "
           "precedes, in decoding order, a subpicture with nuh_layer_id equal to layerId and subpicture index equal to subpicIdx in a recovery point picture shall precede "
@@ -2184,10 +2205,30 @@ void  Slice::initWpAcDcParam()
 }
 
 //! get tables for weighted prediction
-void  Slice::getWpScaling( RefPicList e, int iRefIdx, WPScalingParam *&wp ) const
+const WPScalingParam *Slice::getWpScaling(const RefPicList refPicList, const int refIdx) const
 {
-  CHECK(e>=NUM_REF_PIC_LIST_01, "Invalid picture reference list");
-  wp = (WPScalingParam*) m_weightPredTable[e][iRefIdx];
+  CHECK(refPicList >= NUM_REF_PIC_LIST_01, "Invalid picture reference list");
+  if (refIdx < 0)
+  {
+    return nullptr;
+  }
+  else
+  {
+    return m_weightPredTable[refPicList][refIdx];
+  }
+}
+
+WPScalingParam *Slice::getWpScaling(const RefPicList refPicList, const int refIdx)
+{
+  CHECK(refPicList >= NUM_REF_PIC_LIST_01, "Invalid picture reference list");
+  if (refIdx < 0)
+  {
+    return nullptr;
+  }
+  else
+  {
+    return m_weightPredTable[refPicList][refIdx];
+  }
 }
 
 //! reset Default WP tables settings : no weight.
@@ -2200,11 +2241,11 @@ void  Slice::resetWpScaling()
       for ( int yuv=0 ; yuv<MAX_NUM_COMPONENT ; yuv++ )
       {
         WPScalingParam  *pwp = &(m_weightPredTable[e][i][yuv]);
-        pwp->bPresentFlag      = false;
-        pwp->uiLog2WeightDenom = 0;
-        pwp->uiLog2WeightDenom = 0;
-        pwp->iWeight           = 1;
-        pwp->iOffset           = 0;
+        pwp->presentFlag     = false;
+        pwp->log2WeightDenom = 0;
+        pwp->log2WeightDenom = 0;
+        pwp->codedWeight     = 1;
+        pwp->codedOffset     = 0;
       }
     }
   }
@@ -2221,19 +2262,20 @@ void  Slice::initWpScaling(const SPS *sps)
       for ( int yuv=0 ; yuv<MAX_NUM_COMPONENT ; yuv++ )
       {
         WPScalingParam  *pwp = &(m_weightPredTable[e][i][yuv]);
-        if ( !pwp->bPresentFlag )
+        if (!pwp->presentFlag)
         {
           // Inferring values not present :
-          pwp->iWeight = (1 << pwp->uiLog2WeightDenom);
-          pwp->iOffset = 0;
+          pwp->codedWeight = (1 << pwp->log2WeightDenom);
+          pwp->codedOffset = 0;
         }
 
         const int offsetScalingFactor = bUseHighPrecisionPredictionWeighting ? 1 : (1 << (sps->getBitDepth(toChannelType(ComponentID(yuv)))-8));
 
-        pwp->w      = pwp->iWeight;
-        pwp->o      = pwp->iOffset * offsetScalingFactor; //NOTE: This value of the ".o" variable is never used - .o is set immediately before it gets used
-        pwp->shift  = pwp->uiLog2WeightDenom;
-        pwp->round  = (pwp->uiLog2WeightDenom>=1) ? (1 << (pwp->uiLog2WeightDenom-1)) : (0);
+        pwp->w = pwp->codedWeight;
+        pwp->o = pwp->codedOffset * offsetScalingFactor;   // NOTE: This value of the ".o" variable is never used - .o
+                                                           // is set immediately before it gets used
+        pwp->shift = pwp->log2WeightDenom;
+        pwp->round = (pwp->log2WeightDenom >= 1) ? (1 << (pwp->log2WeightDenom - 1)) : (0);
       }
     }
   }
@@ -2542,7 +2584,9 @@ PicHeader::PicHeader()
 : m_valid                                         ( 0 )
 , m_nonReferencePictureFlag                       ( 0 )
 , m_gdrPicFlag                                    ( 0 )
+#if !JVET_S0193_NO_OUTPUT_PRIOR_PIC
 , m_noOutputOfPriorPicsFlag                       ( 0 )
+#endif
 , m_recoveryPocCnt                                ( -1 )
 , m_noOutputBeforeRecoveryFlag                    ( false )
 , m_handleCraAsCvsStartFlag                       ( false )
@@ -2635,7 +2679,9 @@ void PicHeader::initPicHeader()
   m_valid                                         = 0;
   m_nonReferencePictureFlag                       = 0;
   m_gdrPicFlag                                    = 0;
+#if !JVET_S0193_NO_OUTPUT_PRIOR_PIC
   m_noOutputOfPriorPicsFlag                       = 0;
+#endif
   m_recoveryPocCnt                                = -1;
   m_spsId                                         = -1;
   m_ppsId                                         = -1;
@@ -2706,10 +2752,30 @@ void PicHeader::initPicHeader()
   m_alfApsId.resize(0);
 }
 
-void PicHeader::getWpScaling(RefPicList e, int iRefIdx, WPScalingParam *&wp) const
+const WPScalingParam *PicHeader::getWpScaling(const RefPicList refPicList, const int refIdx) const
 {
-  CHECK(e >= NUM_REF_PIC_LIST_01, "Invalid picture reference list");
-  wp = (WPScalingParam *) m_weightPredTable[e][iRefIdx];
+  CHECK(refPicList >= NUM_REF_PIC_LIST_01, "Invalid picture reference list");
+  if (refIdx < 0)
+  {
+    return nullptr;
+  }
+  else
+  {
+    return m_weightPredTable[refPicList][refIdx];
+  }
+}
+
+WPScalingParam *PicHeader::getWpScaling(const RefPicList refPicList, const int refIdx)
+{
+  CHECK(refPicList >= NUM_REF_PIC_LIST_01, "Invalid picture reference list");
+  if (refIdx < 0)
+  {
+    return nullptr;
+  }
+  else
+  {
+    return m_weightPredTable[refPicList][refIdx];
+  }
 }
 
 void PicHeader::resetWpScaling()
@@ -2721,10 +2787,10 @@ void PicHeader::resetWpScaling()
       for ( int yuv=0 ; yuv<MAX_NUM_COMPONENT ; yuv++ )
       {
         WPScalingParam  *pwp = &(m_weightPredTable[e][i][yuv]);
-        pwp->bPresentFlag      = false;
-        pwp->uiLog2WeightDenom = 0;
-        pwp->iWeight           = 1;
-        pwp->iOffset           = 0;
+        pwp->presentFlag     = false;
+        pwp->log2WeightDenom = 0;
+        pwp->codedWeight     = 1;
+        pwp->codedOffset     = 0;
       }
     }
   }
@@ -3629,6 +3695,9 @@ ReferencePictureList::ReferencePictureList( const bool interLayerPicPresentFlag 
   ::memset(m_POC, 0, sizeof(m_POC));
   ::memset( m_isInterLayerRefPic, 0, sizeof( m_isInterLayerRefPic ) );
   ::memset( m_interLayerRefPicIdx, 0, sizeof( m_interLayerRefPicIdx ) );
+
+  ::memset(m_deltaPOCMSBCycleLT, 0, sizeof(m_deltaPOCMSBCycleLT));
+  ::memset(m_deltaPocMSBPresentFlag, 0, sizeof(m_deltaPocMSBPresentFlag));
 }
 
 ReferencePictureList::~ReferencePictureList()

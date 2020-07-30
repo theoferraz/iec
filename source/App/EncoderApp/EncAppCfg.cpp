@@ -81,60 +81,6 @@ EncAppCfg::EncAppCfg()
 , m_snrInternalColourSpace(false)
 , m_outputInternalColourSpace(false)
 , m_packedYUVMode(false)
-#if JVET_S0179_CONDITIONAL_SIGNAL_GCI
-, m_gciPresentFlag(true)
-#endif
-, m_bIntraOnlyConstraintFlag(false)
-, m_maxBitDepthConstraintIdc(0)
-, m_maxChromaFormatConstraintIdc(CHROMA_420)
-, m_bFrameConstraintFlag(false)
-, m_singleLayerConstraintFlag(false)
-, m_allLayersIndependentConstraintFlag(false)
-, m_noMrlConstraintFlag(false)
-, m_noIspConstraintFlag(false)
-, m_noMipConstraintFlag(false)
-, m_noLfnstConstraintFlag(false)
-, m_noMmvdConstraintFlag(false)
-, m_noSmvdConstraintFlag(false)
-, m_noProfConstraintFlag(false)
-, m_noPaletteConstraintFlag(false)
-, m_noActConstraintFlag(false)
-, m_noLmcsConstraintFlag(false)
-, m_bNoQtbttDualTreeIntraConstraintFlag(false)
-, m_noPartitionConstraintsOverrideConstraintFlag(false)
-, m_bNoSaoConstraintFlag(false)
-, m_bNoAlfConstraintFlag(false)
-, m_noCCAlfConstraintFlag(false)
-, m_bNoRefWraparoundConstraintFlag(false)
-, m_bNoTemporalMvpConstraintFlag(false)
-, m_bNoSbtmvpConstraintFlag(false)
-, m_bNoAmvrConstraintFlag(false)
-, m_bNoBdofConstraintFlag(false)
-, m_noDmvrConstraintFlag(false)
-, m_bNoCclmConstraintFlag(false)
-, m_bNoMtsConstraintFlag(false)
-, m_noSbtConstraintFlag(false)
-, m_bNoAffineMotionConstraintFlag(false)
-, m_bNoBcwConstraintFlag(false)
-, m_noIbcConstraintFlag(false)
-, m_bNoCiipConstraintFlag(false)
-, m_noGeoConstraintFlag(false)
-, m_bNoLadfConstraintFlag(false)
-, m_noTransformSkipConstraintFlag(false)
-, m_noBDPCMConstraintFlag(false)
-, m_noJointCbCrConstraintFlag(false)
-, m_bNoQpDeltaConstraintFlag(false)
-, m_bNoDepQuantConstraintFlag(false)
-, m_bNoSignDataHidingConstraintFlag(false)
-, m_noTrailConstraintFlag(false)
-, m_noStsaConstraintFlag(false)
-, m_noRaslConstraintFlag(false)
-, m_noRadlConstraintFlag(false)
-, m_noIdrConstraintFlag(false)
-, m_noCraConstraintFlag(false)
-, m_noGdrConstraintFlag(false)
-, m_noApsConstraintFlag(false)
-
 #if EXTENSION_360_VIDEO
 , m_ext360(*this)
 #endif
@@ -613,6 +559,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   int tmpFastInterSearchMode;
   int tmpMotionEstimationSearchMethod;
   int tmpDecodedPictureHashSEIMappedType;
+#if JVET_R0294_SUBPIC_HASH
+  int tmpSubpicDecodedPictureHashMappedType;
+#endif
   string inputColourSpaceConvert;
   string inputPathPrefix;
   ExtendedProfileName extendedProfile;
@@ -715,7 +664,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>  cfg_subPicId(0, std::numeric_limits<uint16_t>::max(), 0, MAX_NUM_SUB_PICS);
 
   SMultiValueInput<int>          cfg_sliFractions(0, 100, 0, std::numeric_limits<int>::max());
+#if  JVET_S0176_SLI_SEI
+  SMultiValueInput<Level::Name>  cfg_sliRefLevels(Level::NONE, Level::LEVEL15_5, 0, 8 * MAX_VPS_SUBLAYERS);
+#else
   SMultiValueInput<Level::Name>  cfg_sliRefLevels(Level::NONE, Level::LEVEL15_5,  0, 8);
+#endif
 
   int warnUnknowParameter = 0;
 
@@ -730,6 +683,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   bool sdr = false;
 
+  // clang-format off
   po::Options opts;
   opts.addOptions()
   ("help",                                            do_help,                                          false, "this help text")
@@ -822,25 +776,75 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("EnableDecodingCapabilityInformation",             m_DCIEnabled,                                     false, "Enables writing of Decoding Capability Information")
   ("MaxBitDepthConstraint",                           m_bitDepthConstraint,                                0u, "Bit depth to use for profile-constraint for RExt profiles. 0=automatically choose based upon other parameters")
   ("MaxChromaFormatConstraint",                       tmpConstraintChromaFormat,                            0, "Chroma-format to use for the profile-constraint for RExt profiles. 0=automatically choose based upon other parameters")
-  ("OnePictureOnlyConstraintFlag",                    m_onePictureOnlyConstraintFlag,                   false, "Value of general_intra_constraint_flag. Can only be used for single frame encodings. Will be set to true for still picture profiles")
-  ("IntraConstraintFlag",                             m_intraConstraintFlag,                            false, "Value of intra_only_constraint_flag")
 
-#if !JVET_S0266_VUI_length
-  ("NonPackedSource",                                 m_nonPackedConstraintFlag,                        false, "Indicate that source does not contain frame packing")
-  ("NonProjectedConstraintFlag",                      m_nonProjectedConstraintFlag,                     false, "Indicate that the bitstream contains projection SEI messages")
-#endif
-  ("NoResChangeInClvsConstraintFlag",                 m_noResChangeInClvsConstraintFlag,                false, "Indicate that the picture spatial resolution does not change within any CLVS referring to the SPS")
-  ("SingleLayerConstraintFlag",                       m_singleLayerConstraintFlag,                     false, "Indicate that the bitstream contains only one layer")
-  ("AllLayersIndependentConstraintFlag",              m_allLayersIndependentConstraintFlag,            false, "Indicate that all layers are independent")
+  ("GciPresentFlag",                                  m_gciPresentFlag,                                 false, "GCI field present")
+  ("IntraOnlyConstraintFlag",                         m_intraOnlyConstraintFlag,                        false, "Value of intra_only_constraint_flag")
+  ("AllLayersIndependentConstraintFlag",              m_allLayersIndependentConstraintFlag,             false, "Indicate that all layers are independent")
+  ("OnePictureOnlyConstraintFlag",                    m_onePictureOnlyConstraintFlag,                   false, "Value of general_intra_constraint_flag. Can only be used for single frame encodings. Will be set to true for still picture profiles")
+  ("MaxBitDepthConstraintIdc",                        m_maxBitDepthConstraintIdc,                          16u, "Indicate that bit_depth_minus8 plus 8 shall be in the range of 0 to m_maxBitDepthConstraintIdc")
+  ("MaxChromaFormatConstraintIdc",                    m_maxChromaFormatConstraintIdc,                        3, "Indicate that chroma_format_idc shall be in the range of 0 to m_maxChromaFormatConstraintIdc")
+  ("TrailConstraintFlag",                             m_noTrailConstraintFlag,                          false, "Indicate that TRAIL is deactivated")
+  ("StsaConstraintFlag",                              m_noStsaConstraintFlag,                           false, "Indicate that STSA is deactivated")
+  ("RaslConstraintFlag",                              m_noRaslConstraintFlag,                           false, "Indicate that RSAL is deactivated")
+  ("RadlConstraintFlag",                              m_noRadlConstraintFlag,                           false, "Indicate that RADL is deactivated")
+  ("IdrConstraintFlag",                               m_noIdrConstraintFlag,                            false, "Indicate that IDR is deactivated")
+  ("CraConstraintFlag",                               m_noCraConstraintFlag,                            false, "Indicate that CRA is deactivated")
+  ("GdrConstraintFlag",                               m_noGdrConstraintFlag,                            false, "Indicate that GDR is deactivated")
+  ("ApsConstraintFlag",                               m_noApsConstraintFlag,                            false, "Indicate that APS is deactivated")
   ("OneTilePerPicConstraintFlag",                     m_oneTilePerPicConstraintFlag,                    false, "Indicate that each picture shall contain only one tile")
   ("PicHeaderInSliceHeaderConstraintFlag",            m_picHeaderInSliceHeaderConstraintFlag,           false, "Indicate that picture header is present in slice header")
   ("OneSlicePerPicConstraintFlag",                    m_oneSlicePerPicConstraintFlag,                   false, "Indicate that each picture shall contain only one slice")
   ("OneSubpicPerPicConstraintFlag",                   m_oneSubpicPerPicConstraintFlag,                  false, "Indicate that each picture shall contain only one subpicture")
-  ("FrameOnly",                                       m_frameOnlyConstraintFlag,                        false, "Indicate that the bitstream contains only frames")
+  ("PartitionConstraintsOverrideConstraintFlag",      m_noPartitionConstraintsOverrideConstraintFlag,   false, "Indicate that Partition Override is deactivated")
+  ("QtbttDualTreeIntraConstraintFlag",                m_bNoQtbttDualTreeIntraConstraintFlag,            false, "Indicate that Qtbtt DualTree Intra is deactivated")
+  ("PaletteConstraintFlag",                           m_noPaletteConstraintFlag,                        false, "Indicate that PLT is deactivated")
+  ("IbcConstraintFlag",                               m_noIbcConstraintFlag,                            false, "Indicate that IBC is deactivated")
+  ("IspConstraintFlag",                               m_noIspConstraintFlag,                            false, "Indicate that ISP is deactivated")
+  ("MrlConstraintFlag",                               m_noMrlConstraintFlag,                            false, "Indicate that MRL is deactivated")
+  ("MipConstraintFlag",                               m_noMipConstraintFlag,                            false, "Indicate that MIP is deactivated")
+  ("CclmConstraintFlag",                              m_bNoCclmConstraintFlag,                          false, "Indicate that CCLM is deactivated")
+  ("NoResChangeInClvsConstraintFlag",                 m_noResChangeInClvsConstraintFlag,                false, "Indicate that the picture spatial resolution does not change within any CLVS referring to the SPS")
+  ("RefWraparoundConstraintFlag",                     m_bNoRefWraparoundConstraintFlag,                 false, "Indicate that Reference Wraparound is deactivated")
+  ("TemporalMvpConstraintFlag",                       m_bNoTemporalMvpConstraintFlag,                   false, "Indicate that temporal MVP is deactivated")
+  ("SbtmvpConstraintFlag",                            m_bNoSbtmvpConstraintFlag,                        false, "Indicate that SbTMVP is deactivated")
+  ("AmvrConstraintFlag",                              m_bNoAmvrConstraintFlag,                          false, "Indicate that AMVR is deactivated")
+  ("SmvdConstraintFlag",                              m_noSmvdConstraintFlag,                           false, "Indicate that SMVD is deactivated")
+  ("BdofConstraintFlag",                              m_bNoBdofConstraintFlag,                          false, "Indicate that BIO is deactivated")
+  ("DmvrConstraintFlag",                              m_noDmvrConstraintFlag,                           false, "Indicate that DMVR is deactivated")
+  ("MmvdConstraintFlag",                              m_noMmvdConstraintFlag,                           false, "Indicate that MMVD is deactivated")
+  ("AffineMotionConstraintFlag",                      m_bNoAffineMotionConstraintFlag,                  false, "Indicate that Affine is deactivated")
+  ("ProfConstraintFlag",                              m_noProfConstraintFlag,                           false, "Indicate that PROF is deactivated")
+  ("BcwConstraintFlag",                               m_bNoBcwConstraintFlag,                           false, "Indicate that BCW is deactivated")
+  ("CiipConstraintFlag",                              m_bNoCiipConstraintFlag,                          false, "Indicate that CIIP is deactivated")
+  ("GpmConstraintFlag",                               m_noGeoConstraintFlag,                            false, "Indicate that GPM is deactivated")
+  ("TransformSkipConstraintFlag",                     m_noTransformSkipConstraintFlag,                  false, "Indicate that Transform Skip is deactivated")
+  ("BDPCMConstraintFlag",                             m_noBDPCMConstraintFlag,                          false, "Indicate that BDPCM is deactivated")
+  ("MtsConstraintFlag",                               m_bNoMtsConstraintFlag,                           false, "Indicate that MTS is deactivated")
+  ("LfnstConstraintFlag",                             m_noLfnstConstraintFlag,                          false, "Indicate that LFNST is deactivated")
+  ("JointCbCrConstraintFlag",                         m_noJointCbCrConstraintFlag,                      false, "Indicate that JCCR is deactivated")
+  ("SbtConstraintFlag",                               m_noSbtConstraintFlag,                            false, "Indicate that SBT is deactivated")
+  ("ActConstraintFlag",                               m_noActConstraintFlag,                            false, "Indicate that ACT is deactivated")
 #if JVET_S0050_GCI
   ("ExplicitScaleListConstraintFlag",                 m_noExplicitScaleListConstraintFlag,              false, "Indicate that explicit scaling list is deactivated")
+#endif
+  ("DepQuantConstraintFlag",                          m_bNoDepQuantConstraintFlag,                      false, "Indicate that DQ is deactivated")
+  ("SignDataHidingConstraintFlag",                    m_bNoSignDataHidingConstraintFlag,                false, "Indicate that SDH is deactivated")
+  ("QpDeltaConstraintFlag",                           m_bNoQpDeltaConstraintFlag,                       false, "Indicate that QPdelta is deactivated")
+  ("SaoConstraintFlag",                               m_bNoSaoConstraintFlag,                           false, "Indicate that SAO is deactivated")
+  ("AlfConstraintFlag",                               m_bNoAlfConstraintFlag,                           false, "Indicate that ALF is deactivated")
+  ("CCAlfConstraintFlag",                             m_noCCAlfConstraintFlag,                          false, "Indicate that CCALF is deactivated")
+  ("LmcsConstraintFlag",                              m_noLmcsConstraintFlag,                           false, "Indicate that LMCS is deactivated")
+  ("LadfConstraintFlag",                              m_bNoLadfConstraintFlag,                          false, "Indicate that LADF is deactivated")
+#if JVET_S0050_GCI
   ("VirtualBoundaryConstraintFlag",                   m_noVirtualBoundaryConstraintFlag,                false, "Indicate that virtual boundary is deactivated")
 #endif
+  ("SingleLayerConstraintFlag",                       m_singleLayerConstraintFlag,                      false, "Indicate that the bitstream contains only one layer")
+  ("FrameOnlyConstraintFlag",                         m_frameOnlyConstraintFlag,                        false, "Indicate that the bitstream contains only frames")
+ #if !JVET_S0266_VUI_length
+  ("NonPackedSourceConstraintFlag",                   m_nonPackedConstraintFlag,                        false, "Indicate that source does not contain frame packing")
+  ("NonProjectedConstraintFlag",                      m_nonProjectedConstraintFlag,                     false, "Indicate that the bitstream contains projection SEI messages")
+#endif
+
   ("CTUSize",                                         m_uiCTUSize,                                       128u, "CTUSize (specifies the CTU size if QTBT is on) [default: 128]")
   ("Log2MinCuSize",                                   m_log2MinCuSize,                                     2u, "Log2 min CU size")
   ("SubPicInfoPresentFlag",                           m_subPicInfoPresentFlag,                          false, "equal to 1 specifies that subpicture parameters are present in in the SPS RBSP syntax")
@@ -877,7 +881,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("DualITree",                                       m_dualTree,                                       false, "Use separate QTBT trees for intra slice luma and chroma channel types")
   ( "LFNST",                                          m_LFNST,                                          false, "Enable LFNST (0:off, 1:on)  [default: off]" )
   ( "FastLFNST",                                      m_useFastLFNST,                                   false, "Fast methods for LFNST" )
-  ("SubPuMvp",                                        m_SubPuMvpMode,                                       0, "Enable Sub-PU temporal motion vector prediction (0:off, 1:ATMVP, 2:STMVP, 3:ATMVP+STMVP)  [default: off]")
+  ("SbTMVP",                                          m_sbTmvpEnableFlag,                               false, "Enable Subblock Temporal Motion Vector Prediction (0: off, 1: on) [default: off]")
   ("MMVD",                                            m_MMVD,                                            true, "Enable Merge mode with Motion Vector Difference (0:off, 1:on)  [default: 1]")
   ("Affine",                                          m_Affine,                                         false, "Enable affine prediction (0:off, 1:on)  [default: off]")
   ("AffineType",                                      m_AffineType,                                      true,  "Enable affine type prediction (0:off, 1:on)  [default: on]" )
@@ -1150,6 +1154,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
                                                                                                                "\t2: CRC\n"
                                                                                                                "\t1: use MD5\n"
                                                                                                                "\t0: disable")
+#if JVET_R0294_SUBPIC_HASH
+  ("SubpicDecodedPictureHash",                        tmpSubpicDecodedPictureHashMappedType,                0, "Control generation of decode picture hash SEI messages for each subpicture\n"
+                                                                                                               "\t3: checksum\n"
+                                                                                                               "\t2: CRC\n"
+                                                                                                               "\t1: use MD5\n"
+                                                                                                               "\t0: disable")
+#endif
   ("TMVPMode",                                        m_TMVPModeId,                                         1, "TMVP mode 0: TMVP disable for all slices. 1: TMVP enable for all slices (default) 2: TMVP enable for certain slices only")
   ("SliceLevelRpl",                                   m_sliceLevelRpl,                                   true, "Code reference picture lists in slice headers rather than picture header.")
   ("SliceLevelDblk",                                  m_sliceLevelDblk,                                  true, "Code deblocking filter parameters in slice headers rather than picture header.")
@@ -1191,7 +1202,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("ProgressiveSource",                               m_progressiveSourceFlag,                          false, "Indicate that source is progressive")
   ("InterlacedSource",                                m_interlacedSourceFlag,                           false, "Indicate that source is interlaced")
 #if JVET_S0266_VUI_length
-  ("NonPackedSource",                                 m_nonPackedConstraintFlag,                        false, "Indicate that source does not contain frame packing")
+  ("NonPackedSourceConstraintFlag",                   m_nonPackedConstraintFlag,                        false, "Indicate that source does not contain frame packing")
   ("NonProjectedConstraintFlag",                      m_nonProjectedConstraintFlag,                     false, "Indicate that the bitstream contains projection SEI messages")
 #endif
   ("ChromaLocInfoPresent",                            m_chromaLocInfoPresentFlag,                       false, "Signals whether chroma_sample_loc_type_top_field and chroma_sample_loc_type_bottom_field are present")
@@ -1296,6 +1307,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEISubpicLevelInfoRefLevels",                     cfg_sliRefLevels,                                  cfg_sliRefLevels, "List of reference levels for Subpicture Level Information SEI messages")
   ("SEISubpicLevelInfoExplicitFraction",              m_cfgSubpictureLevelInfoSEI.m_explicitFraction,    false,            "Enable sending of explicit fractions in Subpicture Level Information SEI messages")
   ("SEISubpicLevelInfoNumSubpics",                    m_cfgSubpictureLevelInfoSEI.m_numSubpictures,      1,                "Number of subpictures for Subpicture Level Information SEI messages")
+#if JVET_S0176_SLI_SEI
+  ("SEISubpicLevelInfoMaxSublayers",                  m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers,               1,                    "Number of sublayers for Subpicture Level Information SEI messages")
+  ("SEISubpicLevelInfoSublayerInfoPresentFlag",       m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag,    false,                "Enable sending of level information for all sublayers in Subpicture Level Information SEI messages")
+#endif
   ("SEISubpicLevelInfoRefLevelFractions",             cfg_sliFractions,                                  cfg_sliFractions, "List of fractions for Subpicture Level Information SEI messages")
   ("SEISampleAspectRatioInfo",                        m_sampleAspectRatioInfoSEIEnabled,        false, "Control generation of Sample Aspect Ratio Information SEI messages")
   ("SEISARICancelFlag",                               m_sariCancelFlag,                         false, "Indicates that Sample Aspect Ratio Information SEI message cancels the persistence or follows")
@@ -1401,6 +1416,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("TemporalFilterFutureReference",                 m_gopBasedTemporalFilterFutureReference,   true,            "Enable referencing of future frames in the GOP based temporal filter. This is typically disabled for Low Delay configurations.")
     ("TemporalFilterStrengthFrame*",                  m_gopBasedTemporalFilterStrengths, std::map<int, double>(), "Strength for every * frame in GOP based temporal filter, where * is an integer."
                                                                                                                   " E.g. --TemporalFilterStrengthFrame8 0.95 will enable GOP based temporal filter at every 8th frame with strength 0.95");
+  // clang-format on
 
 #if EXTENSION_360_VIDEO
   TExt360AppEncCfg::TExt360AppEncCfgContext ext360CfgContext;
@@ -1686,12 +1702,34 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   if (m_cfgSubpictureLevelInfoSEI.m_enabled)
   {
     CHECK (m_numSubPics != m_cfgSubpictureLevelInfoSEI.m_numSubpictures, "NumSubPics must be equal to SEISubpicLevelInfoNumSubpics" );
+#if JVET_S0176_SLI_SEI
+    CHECK (m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers != m_maxSublayers, "SEISubpicLevelInfoMaxSublayers must be equal to vps_max_sublayers");
+    if (m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag)
+    {
+      CHECK(cfg_sliRefLevels.values.size() < m_maxSublayers, "when sliSublayerInfoPresentFlag = 1, the number of reference levels must be greater than or equal to sublayers");
+    }
     if (m_cfgSubpictureLevelInfoSEI.m_explicitFraction)
     {
       m_cfgSubpictureLevelInfoSEI.m_fractions = cfg_sliFractions.values;
       m_cfgSubpictureLevelInfoSEI.m_refLevels = cfg_sliRefLevels.values;
-      CHECK (cfg_sliRefLevels.values.size() * m_cfgSubpictureLevelInfoSEI.m_numSubpictures != cfg_sliFractions.values.size(), "Number of subpicture level fractions must be equal to the numer of subpictures times the number of reference levels.");
+      if (m_cfgSubpictureLevelInfoSEI.m_sliSublayerInfoPresentFlag)
+      {
+        CHECK((int)cfg_sliRefLevels.values.size() / m_maxSublayers * m_cfgSubpictureLevelInfoSEI.m_numSubpictures * m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers != cfg_sliFractions.values.size(),
+          "when sliSublayerInfoPresentFlag = 1, the number  of subpicture level fractions must be equal to the numer of subpictures times the number of reference levels times the number of sublayers");
+      }
+      else
+      {
+        CHECK((int)cfg_sliRefLevels.values.size() * m_cfgSubpictureLevelInfoSEI.m_numSubpictures != cfg_sliFractions.values.size(), "when sliSublayerInfoPresentFlag = 0, the number  of subpicture level fractions must be equal to the numer of subpictures times the number of reference levels");
+      }
     }
+#else
+    if (m_cfgSubpictureLevelInfoSEI.m_explicitFraction)
+    {
+        m_cfgSubpictureLevelInfoSEI.m_fractions = cfg_sliFractions.values;
+        m_cfgSubpictureLevelInfoSEI.m_refLevels = cfg_sliRefLevels.values;
+      CHECK (cfg_sliRefLevels.values.size() * m_cfgSubpictureLevelInfoSEI.m_numSubpictures != cfg_sliFractions.values.size(), "when sliSublayerInfoPresentFlag = 0, the number  of subpicture level fractions must be equal to the numer of subpictures times the number of reference levels.");
+    }
+#endif
   }
 
   if (m_costMode != COST_LOSSLESS_CODING && m_mixedLossyLossless)
@@ -1961,7 +1999,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     m_decodedPictureHashSEIType=HashType(tmpDecodedPictureHashSEIMappedType-1);
   }
-
+#if JVET_R0294_SUBPIC_HASH
+  // Need to map values to match those of the SEI message:
+  if (tmpSubpicDecodedPictureHashMappedType==0)
+  {
+    m_subpicDecodedPictureHashType=HASHTYPE_NONE;
+  }
+  else
+  {
+    m_subpicDecodedPictureHashType=HashType(tmpSubpicDecodedPictureHashMappedType-1);
+  }
+#endif
   // allocate slice-based dQP values
   m_aidQP = new int[ m_framesToBeEncoded + m_iGOPSize + 1 ];
   ::memset( m_aidQP, 0, sizeof(int)*( m_framesToBeEncoded + m_iGOPSize + 1 ) );
@@ -2609,20 +2657,6 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara ( m_level==Level::LEVEL15_5 && !m_onePictureOnlyConstraintFlag, "Currently the only profiles that support level 15.5 are still pictures, which require onePictureOnlyConstraintFlag to be 1" );
   }
 
-  if( m_SubPuMvpMode == 3 && m_maxNumMergeCand < 7 )
-  {
-    msg( WARNING, "****************************************************************************\n" );
-    msg( WARNING, "** WARNING: Allowing less than 7 merge candidates, although both          **\n" );
-    msg( WARNING, "**          advanced sup-pu temporal merging modes are enabled.           **\n" );
-    msg( WARNING, "****************************************************************************\n" );
-  }
-  else if( m_SubPuMvpMode != 0 && m_maxNumMergeCand < 6 )
-  {
-    msg( WARNING, "****************************************************************************\n" );
-    msg( WARNING, "** WARNING: Allowing less than 6 merge candidates, although               **\n" );
-    msg( WARNING, "**          an advanced sup-pu temporal merging mode is enabled.          **\n" );
-    msg( WARNING, "****************************************************************************\n" );
-  }
   xConfirmPara( m_iQP < -6 * (m_internalBitDepth[CHANNEL_TYPE_LUMA] - 8) || m_iQP > MAX_QP, "QP exceeds supported range (-QpBDOffsety to 63)" );
 #if W0038_DB_OPT
   xConfirmPara( m_deblockingFilterMetric!=0 && (m_bLoopFilterDisable || m_loopFilterOffsetInPPS), "If DeblockingFilterMetric is non-zero then both LoopFilterDisable and LoopFilterOffsetInPPS must be 0");
@@ -2783,11 +2817,12 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara( 0 < m_maxNumGeoCand && m_maxNumGeoCand < 2, "MaxNumGeoCand must be no less than 2 unless MaxNumGeoCand is 0." );
   xConfirmPara( m_maxNumIBCMergeCand < 1, "MaxNumIBCMergeCand must be 1 or greater." );
   xConfirmPara( m_maxNumIBCMergeCand > IBC_MRG_MAX_NUM_CANDS, "MaxNumIBCMergeCand must be no more than IBC_MRG_MAX_NUM_CANDS." );
-  xConfirmPara( m_maxNumAffineMergeCand < (m_SubPuMvpMode ? 1 : 0), "MaxNumAffineMergeCand must be greater or equal to SubPuMvp." );
+  xConfirmPara(m_maxNumAffineMergeCand < (m_sbTmvpEnableFlag ? 1 : 0),
+               "MaxNumAffineMergeCand must be greater than 0 when SbTMVP is enabled");
   xConfirmPara( m_maxNumAffineMergeCand > AFFINE_MRG_MAX_NUM_CANDS, "MaxNumAffineMergeCand must be no more than AFFINE_MRG_MAX_NUM_CANDS." );
   if ( m_Affine == 0 )
   {
-    m_maxNumAffineMergeCand = m_SubPuMvpMode;
+    m_maxNumAffineMergeCand = m_sbTmvpEnableFlag ? 1 : 0;
     if (m_PROF) msg(WARNING, "PROF is forcefully disabled when Affine is off \n");
     m_PROF = false;
   }
@@ -2862,7 +2897,7 @@ bool EncAppCfg::xCheckParameter()
   }
   else
   {
-    xConfirmPara( m_intraConstraintFlag, "IntraConstraintFlag cannot be 1 for inter sequences");
+    xConfirmPara( m_intraOnlyConstraintFlag, "IntraOnlyConstraintFlag cannot be 1 for inter sequences");
   }
 
   int multipleFactor = m_compositeRefEnabled ? 2 : 1;
@@ -3851,7 +3886,7 @@ void EncAppCfg::xPrintParameter()
       msg( VERBOSE, "AffineType:%d ", m_AffineType );
     }
     msg(VERBOSE, "PROF:%d ", m_PROF);
-    msg(VERBOSE, "SubPuMvp:%d+%d ", m_SubPuMvpMode & 1, (m_SubPuMvpMode & 2) == 2);
+    msg(VERBOSE, "SbTMVP:%d ", m_sbTmvpEnableFlag);
     msg( VERBOSE, "DualITree:%d ", m_dualTree );
     msg( VERBOSE, "IMV:%d ", m_ImvMode );
     msg( VERBOSE, "BIO:%d ", m_BIO );

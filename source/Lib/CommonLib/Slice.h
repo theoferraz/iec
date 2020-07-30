@@ -250,7 +250,7 @@ class ConstraintInfo
   bool              m_frameOnlyConstraintFlag;
   bool              m_intraOnlyConstraintFlag;
   uint32_t          m_maxBitDepthConstraintIdc;
-  ChromaFormat      m_maxChromaFormatConstraintIdc;
+  int               m_maxChromaFormatConstraintIdc;
   bool              m_onePictureOnlyConstraintFlag;
   bool              m_lowerBitRateConstraintFlag;
 
@@ -406,8 +406,8 @@ public:
   uint32_t      getMaxBitDepthConstraintIdc() const { return m_maxBitDepthConstraintIdc; }
   void          setMaxBitDepthConstraintIdc(uint32_t bitDepth) { m_maxBitDepthConstraintIdc = bitDepth; }
 
-  ChromaFormat  getMaxChromaFormatConstraintIdc() const { return m_maxChromaFormatConstraintIdc; }
-  void          setMaxChromaFormatConstraintIdc(ChromaFormat fmt) { m_maxChromaFormatConstraintIdc = fmt; }
+  int           getMaxChromaFormatConstraintIdc() const { return m_maxChromaFormatConstraintIdc; }
+  void          setMaxChromaFormatConstraintIdc(int fmt) { m_maxChromaFormatConstraintIdc = fmt; }
 
 #if !JVET_S0266_VUI_length
   bool          getNonProjectedConstraintFlag() const { return m_nonProjectedConstraintFlag; }
@@ -1748,8 +1748,8 @@ void                    setCCALFEnabledFlag( bool b )                           
   void                    setJointCbCrEnabledFlag(bool bVal)                                              { m_JointCbCrEnabledFlag = bVal; }
   bool                    getJointCbCrEnabledFlag() const                                                 { return m_JointCbCrEnabledFlag; }
 
-  bool                    getSBTMVPEnabledFlag() const                                                    { return m_sbtmvpEnabledFlag; }
-  void                    setSBTMVPEnabledFlag(bool b)                                                    { m_sbtmvpEnabledFlag = b; }
+  bool getSbTMVPEnabledFlag() const { return m_sbtmvpEnabledFlag; }
+  void setSbTMVPEnabledFlag(bool b) { m_sbtmvpEnabledFlag = b; }
 
   void                    setBDOFEnabledFlag(bool b)                                                      { m_bdofEnabledFlag = b; }
   bool                    getBDOFEnabledFlag() const                                                      { return m_bdofEnabledFlag; }
@@ -2325,10 +2325,10 @@ struct WPScalingParam
 {
   // Explicit weighted prediction parameters parsed in slice header,
   // or Implicit weighted prediction parameters (8 bits depth values).
-  bool bPresentFlag;
-  uint32_t uiLog2WeightDenom;
-  int  iWeight;
-  int  iOffset;
+  bool     presentFlag;
+  uint32_t log2WeightDenom;
+  int      codedWeight;
+  int      codedOffset;
 
   // Weighted prediction scaling values built from above parameters (bitdepth scaled):
   int  w;
@@ -2337,7 +2337,14 @@ struct WPScalingParam
   int  shift;
   int  round;
 
+  static bool isWeighted(const WPScalingParam *wp);
 };
+
+inline bool WPScalingParam::isWeighted(const WPScalingParam *wp)
+{
+  return wp != nullptr && (wp[COMPONENT_Y].presentFlag || wp[COMPONENT_Cb].presentFlag || wp[COMPONENT_Cr].presentFlag);
+}
+
 struct WPACDCParam
 {
   int64_t iAC;
@@ -2354,7 +2361,9 @@ private:
   bool                        m_nonReferencePictureFlag;                                //!< non-reference picture flag
   bool                        m_gdrOrIrapPicFlag;                                       //!< gdr or irap picture flag
   bool                        m_gdrPicFlag;                                             //!< gradual decoding refresh picture flag
+#if !JVET_S0193_NO_OUTPUT_PRIOR_PIC
   bool                        m_noOutputOfPriorPicsFlag;                                //!< no output of prior pictures flag
+#endif
   uint32_t                    m_recoveryPocCnt;                                         //!< recovery POC count
   bool                        m_noOutputBeforeRecoveryFlag;                             //!< NoOutputBeforeRecoveryFlag
   bool                        m_handleCraAsCvsStartFlag;                                //!< HandleCraAsCvsStartFlag
@@ -2444,8 +2453,10 @@ public:
   bool                        getGdrOrIrapPicFlag() const                               { return m_gdrOrIrapPicFlag;                                                                   }
   void                        setGdrPicFlag( bool b )                                   { m_gdrPicFlag = b;                                                                            }
   bool                        getGdrPicFlag() const                                     { return m_gdrPicFlag;                                                                         }
+#if !JVET_S0193_NO_OUTPUT_PRIOR_PIC
   void                        setNoOutputOfPriorPicsFlag( bool b )                      { m_noOutputOfPriorPicsFlag = b;                                                               }
   bool                        getNoOutputOfPriorPicsFlag() const                        { return m_noOutputOfPriorPicsFlag;                                                            }
+#endif
   void                        setRecoveryPocCnt( uint32_t u )                           { m_recoveryPocCnt = u;                                                                        }
   uint32_t                    getRecoveryPocCnt() const                                 { return m_recoveryPocCnt;                                                                     }
   void                        setSPSId( uint32_t u )                                    { m_spsId = u;                                                                                 }
@@ -2605,7 +2616,8 @@ public:
   {
     memcpy(m_weightPredTable, wp, sizeof(WPScalingParam) * NUM_REF_PIC_LIST_01 * MAX_NUM_REF * MAX_NUM_COMPONENT);
   }
-  void                        getWpScaling(RefPicList e, int iRefIdx, WPScalingParam *&wp) const;
+  const WPScalingParam *      getWpScaling(const RefPicList refPicList, const int refIdx) const;
+  WPScalingParam *            getWpScaling(const RefPicList refPicList, const int refIdx);
   WPScalingParam*             getWpScalingAll()                                        { return (WPScalingParam *) m_weightPredTable; }
   void                        resetWpScaling();
   void                        setNumL0Weights(int b)                                   { m_numL0Weights = b;                          }
@@ -2653,6 +2665,9 @@ private:
   bool                       m_pictureHeaderInSliceHeader;
   uint32_t                   m_nuhLayerId;           ///< Nal unit layer id
   SliceType                  m_eSliceType;
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+  bool                       m_noOutputOfPriorPicsFlag;           //!< no output of prior pictures flag
+#endif
   int                        m_iSliceQp;
   int                        m_iSliceQpBase;
   bool                       m_ChromaQpAdjEnabled;
@@ -2792,6 +2807,10 @@ public:
   NalUnitType                 getPrevIRAPSubpicType() const                          { return m_prevIRAPSubpicType;                                  }
   void                        checkSubpicTypeConstraints(PicList& rcListPic, const ReferencePictureList* pRPL0, const ReferencePictureList* pRPL1, const int prevIRAPSubpicDecOrderNo, const bool lastNoOutputBeforeRecoveryFlag );
   SliceType                   getSliceType() const                                   { return m_eSliceType;                                          }
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+  void                        setNoOutputOfPriorPicsFlag(bool b)                     { m_noOutputOfPriorPicsFlag = b;                                }
+  bool                        getNoOutputOfPriorPicsFlag() const                     { return m_noOutputOfPriorPicsFlag;                             }
+#endif
   int                         getPOC() const                                         { return m_iPOC;                                                }
   int                         getSliceQp() const                                     { return m_iSliceQp;                                            }
   bool                        getUseWeightedPrediction() const                       { return( (m_eSliceType==P_SLICE && testWeightPred()) || (m_eSliceType==B_SLICE && testWeightBiPred()) ); }
@@ -2975,7 +2994,8 @@ public:
     memcpy(m_weightPredTable, wp, sizeof(WPScalingParam) * NUM_REF_PIC_LIST_01 * MAX_NUM_REF * MAX_NUM_COMPONENT);
   }
   WPScalingParam *            getWpScalingAll()                                      { return (WPScalingParam *) m_weightPredTable;                  }
-  void                        getWpScaling( RefPicList e, int iRefIdx, WPScalingParam *&wp) const;
+  WPScalingParam *            getWpScaling(const RefPicList refPicList, const int refIdx);
+  const WPScalingParam *      getWpScaling(const RefPicList refPicList, const int refIdx) const;
 
   void                        resetWpScaling();
   void                        initWpScaling(const SPS *sps);

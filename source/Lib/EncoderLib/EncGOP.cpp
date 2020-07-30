@@ -752,7 +752,11 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
 
 }
 
+#if JVET_R0294_SUBPIC_HASH
+void EncGOP::xCreateScalableNestingSEI(SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t>& subpicIDs)
+#else
 void EncGOP::xCreateScalableNestingSEI(SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, const std::vector<uint16_t>& subpicIDs)
+#endif
 {
   SEIMessages tmpMessages;
   while (!nestedSeiMessages.empty())
@@ -761,7 +765,11 @@ void EncGOP::xCreateScalableNestingSEI(SEIMessages& seiMessages, SEIMessages& ne
     nestedSeiMessages.pop_front();
     tmpMessages.push_back(sei);
     SEIScalableNesting *nestingSEI = new SEIScalableNesting();
+#if JVET_R0294_SUBPIC_HASH
+    m_seiEncoder.initSEIScalableNesting(nestingSEI, tmpMessages, targetOLSs, targetLayers, subpicIDs);
+#else
     m_seiEncoder.initSEIScalableNesting(nestingSEI, tmpMessages, subpicIDs);
+#endif
     seiMessages.push_back(nestingSEI);
     tmpMessages.clear();
   }
@@ -3003,9 +3011,6 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
           , pcPic, uiNumSliceSegments
         );
 
-        pcSlice->m_ccAlfFilterParam      = m_pcALF->getCcAlfFilterParam();
-        pcSlice->m_ccAlfFilterControl[0] = m_pcALF->getCcAlfControlIdc(COMPONENT_Cb);
-        pcSlice->m_ccAlfFilterControl[1] = m_pcALF->getCcAlfControlIdc(COMPONENT_Cr);
         //assign ALF slice header
         for (int s = 0; s < uiNumSliceSegments; s++)
         {
@@ -3038,6 +3043,9 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
           pcPic->slices[s]->setTileGroupApsIdChroma(cs.slice->getTileGroupApsIdChroma());
           pcPic->slices[s]->setTileGroupCcAlfCbApsId(cs.slice->getTileGroupCcAlfCbApsId());
           pcPic->slices[s]->setTileGroupCcAlfCrApsId(cs.slice->getTileGroupCcAlfCrApsId());
+          pcPic->slices[s]->m_ccAlfFilterParam      = m_pcALF->getCcAlfFilterParam();
+          pcPic->slices[s]->m_ccAlfFilterControl[0] = m_pcALF->getCcAlfControlIdc(COMPONENT_Cb);
+          pcPic->slices[s]->m_ccAlfFilterControl[1] = m_pcALF->getCcAlfControlIdc(COMPONENT_Cr);
         }
       }
       DTRACE_UPDATE( g_trace_ctx, ( std::make_pair( "final", 1 ) ) );
@@ -3308,7 +3316,11 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
           {
             if (pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA || pcSlice->getNalUnitType() >= NAL_UNIT_CODED_SLICE_GDR)
             {
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+              pcSlice->setNoOutputOfPriorPicsFlag(true);
+#else
               picHeader->setNoOutputOfPriorPicsFlag(true);
+#endif
             }
           }
         }
@@ -3512,6 +3524,29 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
         m_seiEncoder.initDecodedPictureHashSEI(decodedPictureHashSei, recoBuf, digestStr, pcSlice->getSPS()->getBitDepths());
         trailingSeiMessages.push_back(decodedPictureHashSei);
       }
+#if JVET_R0294_SUBPIC_HASH
+      // create per-subpicture decoded picture hash SEI messages, if more than one subpicture is enabled
+      const PPS* pps = pcPic->cs->pps;
+      const int numSubpics = pps->getNumSubPics();
+      std::string subPicDigest;
+      if (numSubpics > 1 && m_pcCfg->getSubpicDecodedPictureHashType() != HASHTYPE_NONE )
+      {
+        for (int subPicIdx = 0; subPicIdx < numSubpics; subPicIdx++)
+        {
+          const SubPic& subpic = pps->getSubPic(subPicIdx);
+          const UnitArea area = UnitArea(pcSlice->getSPS()->getChromaFormatIdc(), Area(subpic.getSubPicLeft(), subpic.getSubPicTop(), subpic.getSubPicWidthInLumaSample(), subpic.getSubPicHeightInLumaSample()));
+          PelUnitBuf recoBuf = pcPic->cs->getRecoBuf(area);
+          SEIDecodedPictureHash *decodedPictureHashSEI = new SEIDecodedPictureHash();
+          m_seiEncoder.initDecodedPictureHashSEI(decodedPictureHashSEI, recoBuf, subPicDigest, pcSlice->getSPS()->getBitDepths());
+          SEIMessages nestedSEI;
+          nestedSEI.push_back(decodedPictureHashSEI);
+          const std::vector<uint16_t> subPicIds = { (uint16_t)subpic.getSubPicID() };
+          std::vector<int> targetOLS;
+          std::vector<int> targetLayers = {pcPic->layerId};
+          xCreateScalableNestingSEI(trailingSeiMessages, nestedSEI, targetOLS, targetLayers, subPicIds);
+        }
+      }
+#endif
 
       m_pcCfg->setEncodedFlag(iGOPid, true);
 
@@ -3584,7 +3619,15 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
             }
           }
         }
+#if JVET_R0294_SUBPIC_HASH
+        // Note (KJS): Using targetOLS = 0, 1 is as random as encapsulating the same SEIs in scalable nesting.
+        //             This can just be seen as example regarding how to write scalable nesting, not what to write.
+        std::vector<int> targetOLS = {0, 1};
+        std::vector<int> targetLayers;
+        xCreateScalableNestingSEI(leadingSeiMessages, nestedSeiMessages, targetOLS, targetLayers, subpicIDs);
+#else
         xCreateScalableNestingSEI(leadingSeiMessages, nestedSeiMessages, subpicIDs);
+#endif
       }
 
       xWriteLeadingSEIMessages( leadingSeiMessages, duInfoSeiMessages, accessUnit, pcSlice->getTLayer(), pcSlice->getSPS(), duData );

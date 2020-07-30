@@ -691,7 +691,11 @@ void DecLib::finishPictureLight(int& poc, PicList*& rpcListPic )
   m_puCounter++;
 }
 
+#if JVET_R0270
+void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool associatedWithNewClvs)
+#else
 void DecLib::finishPicture(int& poc, PicList*& rpcListPic, MsgLevel msgl )
+#endif
 {
 #if RExt__DECODER_DEBUG_TOOL_STATISTICS
   CodingStatistics::StatTool& s = CodingStatistics::GetStatisticTool( STATS__TOOL_TOTAL_FRAME );
@@ -775,6 +779,30 @@ void DecLib::finishPicture(int& poc, PicList*& rpcListPic, MsgLevel msgl )
 #endif
 
   m_pcPic->neededForOutput = (pcSlice->getPicHeader()->getPicOutputFlag() ? true : false);
+#if JVET_R0270
+  if (associatedWithNewClvs && m_pcPic->neededForOutput)
+  {
+    if (!pcSlice->getPPS()->getMixedNaluTypesInPicFlag() && pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL)
+    {
+      m_pcPic->neededForOutput = false;
+    }
+    else if (pcSlice->getPPS()->getMixedNaluTypesInPicFlag())
+    {
+      bool isRaslPic = true;
+      for (int i = 0; isRaslPic && i < m_pcPic->numSlices; i++) 
+      {
+        if (!(pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_RASL || pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_RADL))
+        {
+          isRaslPic = false;
+        }
+      }
+      if (isRaslPic)
+      {
+        m_pcPic->neededForOutput = false;
+      }
+    }
+  }
+#endif
   m_pcPic->reconstructed = true;
 
 
@@ -930,8 +958,7 @@ void DecLib::checkLayerIdIncludedInCvss()
     return;
   }
 
-  if (m_audIrapOrGdrAuFlag &&
-    (m_isFirstAuInCvs || m_accessUnitPicInfo.begin()->m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP || m_accessUnitPicInfo.begin()->m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL))
+  if (m_audIrapOrGdrAuFlag && (m_isFirstAuInCvs || m_accessUnitPicInfo.begin()->m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP || m_accessUnitPicInfo.begin()->m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL))
   {
     // store layerIDs in the first AU
     m_firstAccessUnitPicInfo.assign(m_accessUnitPicInfo.begin(), m_accessUnitPicInfo.end());
@@ -1964,7 +1991,11 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
 
   if (m_picHeader.getGdrOrIrapPicFlag() && m_bFirstSliceInPicture)
   {
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+    m_accessUnitNoOutputPriorPicFlags.push_back(m_apcSlicePilot->getNoOutputOfPriorPicsFlag());
+#else
     m_accessUnitNoOutputPriorPicFlags.push_back(m_picHeader.getNoOutputOfPriorPicsFlag());
+#endif
   }
 
   PPS *pps = m_parameterSetManager.getPPS(m_picHeader.getPPSId());
@@ -2083,11 +2114,19 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     //the inference for NoOutputOfPriorPicsFlag
     if( !m_firstSliceInBitstream && m_picHeader.getNoOutputBeforeRecoveryFlag() )
     {
-      m_picHeader.setNoOutputOfPriorPicsFlag( true );
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+      m_apcSlicePilot->setNoOutputOfPriorPicsFlag(true);
+#else
+      m_picHeader.setNoOutputOfPriorPicsFlag(true);
+#endif
     }
     else
     {
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+      m_apcSlicePilot->setNoOutputOfPriorPicsFlag(false);
+#else
       m_picHeader.setNoOutputOfPriorPicsFlag(false);
+#endif
     }
 
     if (m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA || m_apcSlicePilot->getNalUnitType() == NAL_UNIT_CODED_SLICE_GDR)
@@ -2095,7 +2134,11 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
       m_lastNoOutputBeforeRecoveryFlag[nalu.m_nuhLayerId] = m_picHeader.getNoOutputBeforeRecoveryFlag();
     }
 
-    if( m_picHeader.getNoOutputOfPriorPicsFlag() )
+#if JVET_S0193_NO_OUTPUT_PRIOR_PIC
+    if (m_apcSlicePilot->getNoOutputOfPriorPicsFlag())
+#else
+    if (m_picHeader.getNoOutputOfPriorPicsFlag())
+#endif
     {
       m_lastPOCNoOutputPriorPics = m_apcSlicePilot->getPOC();
       m_isNoOutputPriorPics = true;
@@ -2256,6 +2299,9 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   m_firstSliceInBitstream  = false;
 
   Slice* pcSlice = m_pcPic->slices[m_uiSliceSegmentIdx];
+#if JVET_R0270
+  m_pcPic->numSlices = m_uiSliceSegmentIdx + 1;
+#endif
   pcSlice->setPic( m_pcPic );
   m_pcPic->poc         = pcSlice->getPOC();
   m_pcPic->referenced  = true;

@@ -181,8 +181,7 @@ protected:
   bool      m_onePictureOnlyConstraintFlag;
   bool      m_bIntraOnlyConstraintFlag;
   uint32_t  m_maxBitDepthConstraintIdc;
-  uint32_t  m_maxChromaFormatConstraintIdc;
-  bool      m_bFrameConstraintFlag;
+  int  m_maxChromaFormatConstraintIdc;
 
   bool      m_singleLayerConstraintFlag;
   bool      m_allLayersIndependentConstraintFlag;
@@ -249,7 +248,7 @@ protected:
   bool m_oneSlicePerPicConstraintFlag;
   bool m_oneSubpicPerPicConstraintFlag;
   bool m_frameOnlyConstraintFlag;
-  bool m_intraConstraintFlag;
+  bool m_intraOnlyConstraintFlag;
 
   //====== Coding Structure ========
   int       m_intraPeriod;                        // needs to be signed to allow '-1' for no intra period
@@ -322,7 +321,7 @@ protected:
 
   bool      m_LFNST;
   bool      m_useFastLFNST;
-  int       m_SubPuMvpMode;
+  bool      m_sbTmvpEnableFlag;
   bool      m_Affine;
   bool      m_AffineType;
   bool      m_PROF;
@@ -513,6 +512,9 @@ protected:
   bool      m_entryPointPresentFlag;                           ///< flag for the presence of entry points
 
   HashType  m_decodedPictureHashSEIType;
+#if JVET_R0294_SUBPIC_HASH
+  HashType  m_subpicDecodedPictureHashType;
+#endif
   bool      m_bufferingPeriodSEIEnabled;
   bool      m_pictureTimingSEIEnabled;
   bool      m_frameFieldInfoSEIEnabled;
@@ -776,15 +778,12 @@ public:
   void      setIntraOnlyConstraintFlag(bool bVal) { m_bIntraOnlyConstraintFlag = bVal; }
   uint32_t  getMaxBitDepthConstraintIdc() const { return m_maxBitDepthConstraintIdc; }
   void      setMaxBitDepthConstraintIdc(uint32_t u) { m_maxBitDepthConstraintIdc = u; }
-  uint32_t  getMaxChromaFormatConstraintIdc() const { return m_maxChromaFormatConstraintIdc; }
-  void      setMaxChromaFormatConstraintIdc(uint32_t u) { m_maxChromaFormatConstraintIdc = u; }
-  bool      getFrameConstraintFlag() const { return m_bFrameConstraintFlag; }
-  void      setFrameConstraintFlag(bool bVal) { m_bFrameConstraintFlag = bVal; }
+  int       getMaxChromaFormatConstraintIdc() const { return m_maxChromaFormatConstraintIdc; }
+  void      setMaxChromaFormatConstraintIdc(int u) { m_maxChromaFormatConstraintIdc = u; }
 #if JVET_S0179_CONDITIONAL_SIGNAL_GCI
   bool          getGciPresentFlag() const { return m_gciPresentFlag; }
   void          setGciPresentFlag(bool b) { m_gciPresentFlag = b; }
 #endif
-
   bool          getSingleLayerConstraintFlag() const { return m_singleLayerConstraintFlag; }
   void          setSingleLayerConstraintFlag(bool bVal) { m_singleLayerConstraintFlag = bVal; }
   bool          getAllLayersIndependentConstraintFlag() const { return m_allLayersIndependentConstraintFlag; }
@@ -1041,8 +1040,7 @@ public:
   void      setVerCollocatedChromaFlag( bool b )             { m_verCollocatedChromaFlag = b; }
   bool      getVerCollocatedChromaFlag()               const { return m_verCollocatedChromaFlag; }
 
-  void      setSubPuMvpMode(int n)          { m_SubPuMvpMode = n; }
-  bool      getSubPuMvpMode()         const { return m_SubPuMvpMode; }
+  void setSbTmvpEnabledFlag(bool val) { m_sbTmvpEnableFlag = val; }
 
   void      setAffine                       ( bool b )       { m_Affine = b; }
   bool      getAffine                       ()         const { return m_Affine; }
@@ -1475,6 +1473,11 @@ public:
   void  setEntryPointPresentFlag(bool b)                             { m_entryPointPresentFlag = b; }
   void  setDecodedPictureHashSEIType(HashType m)                     { m_decodedPictureHashSEIType = m; }
   HashType getDecodedPictureHashSEIType() const                      { return m_decodedPictureHashSEIType; }
+#if JVET_R0294_SUBPIC_HASH
+  void  setSubpicDecodedPictureHashType(HashType m)                  { m_subpicDecodedPictureHashType = m; }
+  HashType getSubpicDecodedPictureHashType() const                   { return m_subpicDecodedPictureHashType; }
+#endif
+
   void  setBufferingPeriodSEIEnabled(bool b)                         { m_bufferingPeriodSEIEnabled = b; }
   bool  getBufferingPeriodSEIEnabled() const                         { return m_bufferingPeriodSEIEnabled; }
   void  setPictureTimingSEIEnabled(bool b)                           { m_pictureTimingSEIEnabled = b; }
@@ -1863,12 +1866,6 @@ public:
 
   bool         getFrameOnlyConstraintFlag() const                    { return m_frameOnlyConstraintFlag; }
   void         setFrameOnlyConstraintFlag(bool b)                    { m_frameOnlyConstraintFlag = b; }
-
-
-  bool         getIntraConstraintFlag() const                        { return m_intraConstraintFlag; }
-  void         setIntraConstraintFlag(bool b)                        { m_intraConstraintFlag=b; }
-
-
 
   void         setSummaryOutFilename(const std::string &s)           { m_summaryOutFilename = s; }
   const std::string& getSummaryOutFilename() const                   { return m_summaryOutFilename; }
