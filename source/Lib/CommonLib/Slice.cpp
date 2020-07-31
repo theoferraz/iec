@@ -2802,17 +2802,12 @@ void PicHeader::resetWpScaling()
 SPSRExt::SPSRExt()
  : m_transformSkipRotationEnabledFlag   (false)
  , m_transformSkipContextEnabledFlag    (false)
-// m_rdpcmEnabledFlag initialized below
  , m_extendedPrecisionProcessingFlag    (false)
  , m_intraSmoothingDisabledFlag         (false)
  , m_highPrecisionOffsetsEnabledFlag    (false)
  , m_persistentRiceAdaptationEnabledFlag(false)
  , m_cabacBypassAlignmentEnabledFlag    (false)
 {
-  for (uint32_t signallingModeIndex = 0; signallingModeIndex < NUMBER_OF_RDPCM_SIGNALLING_MODES; signallingModeIndex++)
-  {
-    m_rdpcmEnabledFlag[signallingModeIndex] = false;
-  }
 }
 
 
@@ -4474,14 +4469,17 @@ bool             operator == (const ConstraintInfo& op1, const ConstraintInfo& o
 #if !JVET_S0266_VUI_length
   if( op1.m_nonPackedConstraintFlag                      != op2.m_nonPackedConstraintFlag                        ) return false;
 #endif
+#if !JVET_S0138_GCI_PTL
   if( op1.m_frameOnlyConstraintFlag                      != op2.m_frameOnlyConstraintFlag                        ) return false;
+#endif
   if( op1.m_intraOnlyConstraintFlag                      != op2.m_intraOnlyConstraintFlag                        ) return false;
   if( op1.m_maxBitDepthConstraintIdc                     != op2.m_maxBitDepthConstraintIdc                       ) return false;
   if( op1.m_maxChromaFormatConstraintIdc                 != op2.m_maxChromaFormatConstraintIdc                   ) return false;
   if( op1.m_onePictureOnlyConstraintFlag                 != op2.m_onePictureOnlyConstraintFlag                   ) return false;
   if( op1.m_lowerBitRateConstraintFlag                   != op2.m_lowerBitRateConstraintFlag                     ) return false;
-
+#if !JVET_S0138_GCI_PTL
   if (op1.m_singleLayerConstraintFlag                    != op2.m_singleLayerConstraintFlag                      ) return false;
+#endif
   if (op1.m_allLayersIndependentConstraintFlag           != op2.m_allLayersIndependentConstraintFlag             ) return false;
   if (op1.m_noMrlConstraintFlag                          != op2.m_noMrlConstraintFlag                            ) return false;
   if (op1.m_noIspConstraintFlag                          != op2.m_noIspConstraintFlag                            ) return false;
@@ -4543,6 +4541,10 @@ bool             operator == (const ProfileTierLevel& op1, const ProfileTierLeve
   if (op1.m_profileIdc      != op2.m_profileIdc) return false;
   if (op1.m_numSubProfile   != op2.m_numSubProfile) return false;
   if (op1.m_levelIdc        != op2.m_levelIdc) return false;
+#if JVET_S0138_GCI_PTL
+  if (op1.m_frameOnlyConstraintFlag != op2.m_frameOnlyConstraintFlag) return false;
+  if (op1.m_multiLayerEnabledFlag   != op2.m_multiLayerEnabledFlag) return false;
+#endif
   if (op1.m_constraintInfo  != op2.m_constraintInfo) return false;
   if (op1.m_subProfileIdc   != op2.m_subProfileIdc) return false;
 

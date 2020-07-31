@@ -696,22 +696,6 @@ const CtxSet ContextSetCfg::CopyRunModel = ContextSetCfg::addCtxSet
   {   0,   9,   5, },
 });
 
-const CtxSet ContextSetCfg::RdpcmFlag = ContextSetCfg::addCtxSet
-({
-  { CNU, CNU, },
-  { CNU, CNU, },
-  { CNU, CNU, },
-  { DWS, DWS, },
-});
-
-const CtxSet ContextSetCfg::RdpcmDir = ContextSetCfg::addCtxSet
-({
-  { CNU, CNU, },
-  { CNU, CNU, },
-  { CNU, CNU, },
-  { DWS, DWS, },
-});
-
 const CtxSet ContextSetCfg::TransformSkipFlag = ContextSetCfg::addCtxSet
 ({
   {  25,  17, },
@@ -766,14 +750,6 @@ const CtxSet ContextSetCfg::SbtPosFlag = ContextSetCfg::addCtxSet
   {  28, },
   { CNU, },
   {  13, },
-});
-
-const CtxSet ContextSetCfg::CrossCompPred = ContextSetCfg::addCtxSet
-({
-  { CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, },
-  { CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, },
-  { CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, },
-  { DWS, DWS, DWS, DWS, DWS, DWS, DWS, DWS, DWS, DWS, },
 });
 
 const CtxSet ContextSetCfg::ChromaQpAdjFlag = ContextSetCfg::addCtxSet

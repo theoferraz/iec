@@ -137,7 +137,9 @@ protected:
   bool      m_bIntraOnlyConstraintFlag;
   uint32_t  m_maxBitDepthConstraintIdc;
   int       m_maxChromaFormatConstraintIdc;
+#if !JVET_S0138_GCI_PTL
   bool      m_singleLayerConstraintFlag;
+#endif
   bool      m_allLayersIndependentConstraintFlag;
   bool      m_noMrlConstraintFlag;
   bool      m_noIspConstraintFlag;
@@ -154,6 +156,9 @@ protected:
   bool      m_noVirtualBoundaryConstraintFlag;
 #endif
   bool      m_bNoQtbttDualTreeIntraConstraintFlag;
+#if JVET_S0066_GCI
+  int       m_maxLog2CtuSizeConstraintIdc;
+#endif
   bool      m_noPartitionConstraintsOverrideConstraintFlag;
   bool      m_bNoSaoConstraintFlag;
   bool      m_bNoAlfConstraintFlag;
@@ -174,6 +179,9 @@ protected:
   bool      m_noGeoConstraintFlag;
   bool      m_bNoLadfConstraintFlag;
   bool      m_noTransformSkipConstraintFlag;
+#if JVET_S0066_GCI
+  bool      m_noLumaTransformSize64ConstraintFlag;
+#endif
   bool      m_noBDPCMConstraintFlag;
   bool      m_noJointCbCrConstraintFlag;
   bool      m_bNoQpDeltaConstraintFlag;
@@ -192,6 +200,10 @@ protected:
   Profile::Name m_profile;
   Level::Tier   m_levelTier;
   Level::Name   m_level;
+#if JVET_S0138_GCI_PTL
+  bool          m_frameOnlyConstraintFlag;
+  bool          m_multiLayerEnabledFlag;
+#endif
   std::vector<uint32_t>  m_subProfile;
   uint8_t      m_numSubProfile;
 
@@ -206,8 +218,9 @@ protected:
   bool          m_picHeaderInSliceHeaderConstraintFlag;
   bool          m_oneSlicePerPicConstraintFlag;
   bool          m_oneSubpicPerPicConstraintFlag;
+#if !JVET_S0138_GCI_PTL
   bool          m_frameOnlyConstraintFlag;
-
+#endif
   // coding structure
   int       m_iIntraPeriod;                                   ///< period of I-slice (random access period)
   int       m_iDecodingRefreshType;                           ///< random access type
@@ -227,7 +240,6 @@ protected:
   uint32_t      m_log2MaxTransformSkipBlockSize;                  ///< transform-skip maximum size (minimum of 2)
   bool      m_transformSkipRotationEnabledFlag;               ///< control flag for transform-skip/transquant-bypass residual rotation
   bool      m_transformSkipContextEnabledFlag;                ///< control flag for transform-skip/transquant-bypass single significance map context
-  bool      m_rdpcmEnabledFlag[NUMBER_OF_RDPCM_SIGNALLING_MODES];///< control flags for residual DPCM
   bool      m_persistentRiceAdaptationEnabledFlag;            ///< control flag for Golomb-Rice parameter adaptation over each slice
   bool      m_cabacBypassAlignmentEnabledFlag;
   bool      m_ISP;

@@ -182,8 +182,9 @@ protected:
   bool      m_bIntraOnlyConstraintFlag;
   uint32_t  m_maxBitDepthConstraintIdc;
   int  m_maxChromaFormatConstraintIdc;
-
+#if !JVET_S0138_GCI_PTL
   bool      m_singleLayerConstraintFlag;
+#endif
   bool      m_allLayersIndependentConstraintFlag;
   bool      m_noMrlConstraintFlag;
   bool      m_noIspConstraintFlag;
@@ -200,6 +201,9 @@ protected:
   bool      m_noVirtualBoundaryConstraintFlag;
 #endif
   bool      m_bNoQtbttDualTreeIntraConstraintFlag;
+#if JVET_S0066_GCI
+  int       m_maxLog2CtuSizeConstraintIdc;
+#endif
   bool      m_noPartitionConstraintsOverrideConstraintFlag;
   bool      m_bNoSaoConstraintFlag;
   bool      m_bNoAlfConstraintFlag;
@@ -220,6 +224,9 @@ protected:
   bool      m_noGeoConstraintFlag;
   bool      m_bNoLadfConstraintFlag;
   bool      m_noTransformSkipConstraintFlag;
+#if JVET_S0066_GCI
+  bool      m_noLumaTransformSize64ConstraintFlag;
+#endif
   bool      m_noBDPCMConstraintFlag;
   bool      m_noJointCbCrConstraintFlag;
   bool      m_bNoQpDeltaConstraintFlag;
@@ -238,6 +245,10 @@ protected:
   Profile::Name m_profile;
   Level::Tier   m_levelTier;
   Level::Name   m_level;
+#if JVET_S0138_GCI_PTL
+  bool m_frameOnlyConstraintFlag;
+  bool m_multiLayerEnabledFlag;
+#endif
   std::vector<uint32_t>      m_subProfile;
   uint8_t       m_numSubProfile;
   bool m_nonPackedConstraintFlag;
@@ -247,7 +258,9 @@ protected:
   bool m_picHeaderInSliceHeaderConstraintFlag;
   bool m_oneSlicePerPicConstraintFlag;
   bool m_oneSubpicPerPicConstraintFlag;
+#if !JVET_S0138_GCI_PTL
   bool m_frameOnlyConstraintFlag;
+#endif
   bool m_intraOnlyConstraintFlag;
 
   //====== Coding Structure ========
@@ -478,7 +491,6 @@ protected:
   bool      m_transformSkipContextEnabledFlag;
   bool      m_persistentRiceAdaptationEnabledFlag;
   bool      m_cabacBypassAlignmentEnabledFlag;
-  bool      m_rdpcmEnabledFlag[NUMBER_OF_RDPCM_SIGNALLING_MODES];
 #if SHARP_LUMA_DELTA_QP
   LumaLevelToDeltaQPMapping m_lumaLevelToDeltaQPMapping; ///< mapping from luma level to delta QP.
 #endif
@@ -768,6 +780,12 @@ public:
 
   void setProfile(Profile::Name profile) { m_profile = profile; }
   void setLevel(Level::Tier tier, Level::Name level) { m_levelTier = tier; m_level = level; }
+#if JVET_S0138_GCI_PTL
+  bool      getFrameOnlyConstraintFlag() const { return m_frameOnlyConstraintFlag; }
+  void      setFrameOnlyConstraintFlag(bool b) { m_frameOnlyConstraintFlag = b;    }
+  bool      getMultiLayerEnabledFlag() const   { return m_multiLayerEnabledFlag;   }
+  void      setMultiLayerEnabledFlag(bool b)   { m_multiLayerEnabledFlag = b;      }
+#endif
   void setNumSubProfile( uint8_t numSubProfile) { m_numSubProfile = numSubProfile; m_subProfile.resize(m_numSubProfile); }
   void setSubProfile( int i, uint32_t subProfile) { m_subProfile[i] = subProfile; }
 
@@ -784,8 +802,10 @@ public:
   bool          getGciPresentFlag() const { return m_gciPresentFlag; }
   void          setGciPresentFlag(bool b) { m_gciPresentFlag = b; }
 #endif
+#if !JVET_S0138_GCI_PTL
   bool          getSingleLayerConstraintFlag() const { return m_singleLayerConstraintFlag; }
   void          setSingleLayerConstraintFlag(bool bVal) { m_singleLayerConstraintFlag = bVal; }
+#endif
   bool          getAllLayersIndependentConstraintFlag() const { return m_allLayersIndependentConstraintFlag; }
   void          setAllLayersIndependentConstraintFlag(bool bVal) { m_allLayersIndependentConstraintFlag = bVal; }
   bool          getNoMrlConstraintFlag() const { return m_noMrlConstraintFlag; }
@@ -816,6 +836,10 @@ public:
 #endif
   bool      getNoQtbttDualTreeIntraConstraintFlag() const { return m_bNoQtbttDualTreeIntraConstraintFlag; }
   void      setNoQtbttDualTreeIntraConstraintFlag(bool bVal) { m_bNoQtbttDualTreeIntraConstraintFlag = bVal; }
+#if JVET_S0066_GCI
+  int       getMaxLog2CtuSizeConstraintIdc() const { return m_maxLog2CtuSizeConstraintIdc; }
+  void      setMaxLog2CtuSizeConstraintIdc(int u) { m_maxLog2CtuSizeConstraintIdc = u; }
+#endif
   bool      getNoPartitionConstraintsOverrideConstraintFlag() const { return m_noPartitionConstraintsOverrideConstraintFlag; }
   void      setNoPartitionConstraintsOverrideConstraintFlag(bool bVal) { m_noPartitionConstraintsOverrideConstraintFlag = bVal; }
   bool      getNoSaoConstraintFlag() const { return m_bNoSaoConstraintFlag; }
@@ -856,6 +880,10 @@ public:
   void      setNoLadfConstraintFlag(bool bVal) { m_bNoLadfConstraintFlag = bVal; }
   bool      getNoTransformSkipConstraintFlag() const { return m_noTransformSkipConstraintFlag; }
   void      setNoTransformSkipConstraintFlag(bool bVal) { m_noTransformSkipConstraintFlag = bVal; }
+#if JVET_S0066_GCI
+  bool      getNoLumaTransformSize64ConstraintFlag() const { return m_noLumaTransformSize64ConstraintFlag; }
+  void      setNoLumaTransformSize64ConstraintFlag(bool bVal) { m_noLumaTransformSize64ConstraintFlag = bVal; }
+#endif
   bool      getNoBDPCMConstraintFlag() const { return m_noBDPCMConstraintFlag; }
   void      setNoBDPCMConstraintFlag(bool bVal) { m_noBDPCMConstraintFlag = bVal; }
   bool      getNoJointCbCrConstraintFlag() const { return m_noJointCbCrConstraintFlag; }
@@ -1410,8 +1438,6 @@ public:
   void setPersistentRiceAdaptationEnabledFlag          (const bool value)       { m_persistentRiceAdaptationEnabledFlag = value; }
   bool getCabacBypassAlignmentEnabledFlag              ()       const      { return m_cabacBypassAlignmentEnabledFlag;  }
   void setCabacBypassAlignmentEnabledFlag              (const bool value)  { m_cabacBypassAlignmentEnabledFlag = value; }
-  bool getRdpcmEnabledFlag                             (const RDPCMSignallingMode signallingMode)        const      { return m_rdpcmEnabledFlag[signallingMode];  }
-  void setRdpcmEnabledFlag                             (const RDPCMSignallingMode signallingMode, const bool value) { m_rdpcmEnabledFlag[signallingMode] = value; }
   bool getUseTransformSkipFast                         ()      { return m_useTransformSkipFast;    }
   void setUseTransformSkipFast                         ( bool b ) { m_useTransformSkipFast  = b;   }
   uint32_t getLog2MaxTransformSkipBlockSize                () const      { return m_log2MaxTransformSkipBlockSize;     }
@@ -1863,10 +1889,10 @@ public:
 
   bool         getOneSubpicPerPicConstraintFlag() const              { return m_oneSubpicPerPicConstraintFlag; }
   void         setOneSubpicPerPicConstraintFlag(bool b)              { m_oneSubpicPerPicConstraintFlag = b; }
-
+#if !JVET_S0138_GCI_PTL
   bool         getFrameOnlyConstraintFlag() const                    { return m_frameOnlyConstraintFlag; }
   void         setFrameOnlyConstraintFlag(bool b)                    { m_frameOnlyConstraintFlag = b; }
-
+#endif
   void         setSummaryOutFilename(const std::string &s)           { m_summaryOutFilename = s; }
   const std::string& getSummaryOutFilename() const                   { return m_summaryOutFilename; }
   void         setSummaryPicFilenameBase(const std::string &s)       { m_summaryPicFilenameBase = s; }

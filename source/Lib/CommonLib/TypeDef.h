@@ -50,9 +50,17 @@
 #include <assert.h>
 #include <cassert>
 
+// clang-format off
 //########### place macros to be removed in next cycle below this line ###############
+#define JVET_S0203                                        1 // JVET-S0203 (aspects 1 & 2): change the signalling of sublayer_level_idc[ i ] and ptl_sublayer_level_present_flag[ i ] to be in descending order
 
-#define JVET_S0193_NO_OUTPUT_PRIOR_PIC                    1 // JVET-S0193: Move ph_no_output_of_prior_pics_flag to SH                       
+#define JVET_S0066_GCI                                    1 // JVET-S0066: Signal new GCI flags gci_three_minus_max_log2_ctu_size_constraint_idc and gci_no_luma_transform_size_64_constraint_flag (no_explicit_scaling_list_constraint_flag already included as part of JVET-S0050)
+
+#define JVET_S0193_NO_OUTPUT_PRIOR_PIC                    1 // JVET-S0193: Move ph_no_output_of_prior_pics_flag to SH
+
+#define JVET_S_PROFILES                                   1 // Profile definitions
+
+#define JVET_S_SUB_PROFILE                                1 // Move signalling of ptl_num_sub_profiles
 
 #define JVET_S0219_ASPECT2_CHANGE_ORDER_APS_PARAMS_TYPE   1 // JVET-S0219 aspect2: change the order to put the aps_params_type before the aps_adaptation_parameter_set_id.
 
@@ -103,6 +111,8 @@
 
 #define JVET_S0071_SAME_SIZE_SUBPIC_LAYOUT                1 // JVET-S0071 : shortcut when all subpictures have the same size
 
+#define JVET_S0098_SLI_FRACTION                           1 // JVET-S0098 Item 3: Add non_subpic_layers_fraction syntax element
+
 #define JVET_S0048_SCALING_OFFSET                         1 // JVET-S0048 Aspect2: change the constraint on the value ranges of scaling window offsets to be more flexible
 
 #define JVET_S0248_HRD_CLEANUP                            1 // JVET-S0248 Aspect7: When bp_alt_cpb_params_present_flag is equal to 1, the value of bp_du_hrd_params_present_flag shall be equal to 0.
@@ -135,6 +145,8 @@
                                                             //             Constrain the value of one_subpic_per_pic_constraint_flag, one_slice_per_pic_constraint_flag and no_aps_constraint_flag
                                                             //             Remove all constraints that require GCI fields to be equal to a value that imposes a constraint
 
+#define JVET_S0138_GCI_PTL                                1 // JVET-S_Notes_d9: move frame_only_constraint_flag and single_layer_constraint_flag into PTL for easy access
+
 #define JVET_S0182_RPL_SIGNALLING                         1 // JVET-S0182: modifications to rpl information signalling
 
 #define JVET_S0185_PROPOSAl1_PICTURE_TIMING_CLEANUP       1 // JVET-S0185: Proposal 1, put syntax element pt_cpb_removal_delay_minus1[] first, followed by similar information for sub-layers, followed by pt_dpb_output_delay
@@ -161,12 +173,10 @@
 typedef std::pair<int, bool> TrMode;
 typedef std::pair<int, int>  TrCost;
 
-// clang-format off
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
 #define REUSE_CU_RESULTS_WITH_MULTIPLE_TUS                1
 #endif
-// clang-format on
 
 #ifndef JVET_J0090_MEMORY_BANDWITH_MEASURE
 #define JVET_J0090_MEMORY_BANDWITH_MEASURE                0
@@ -196,6 +206,7 @@ typedef std::pair<int, int>  TrCost;
 
 #endif
 
+// clang-format on
 
 // ====================================================================================================================
 // General settings
@@ -440,21 +451,6 @@ enum SbtMode
   SBT_HOR_Q0 = 6,
   SBT_HOR_Q1 = 7,
   NUMBER_SBT_MODE
-};
-
-enum RDPCMMode
-{
-  RDPCM_OFF             = 0,
-  RDPCM_HOR             = 1,
-  RDPCM_VER             = 2,
-  NUMBER_OF_RDPCM_MODES = 3
-};
-
-enum RDPCMSignallingMode
-{
-  RDPCM_SIGNAL_IMPLICIT            = 0,
-  RDPCM_SIGNAL_EXPLICIT            = 1,
-  NUMBER_OF_RDPCM_SIGNALLING_MODES = 2
 };
 
 /// supported slice type
@@ -780,9 +776,22 @@ namespace Profile
 {
   enum Name
   {
+#if JVET_S_PROFILES
+    NONE                                 = 0,
+    STILL_PICTURE                        = 64,
+    MAIN_10                              = 1,
+    MAIN_10_STILL_PICTURE                = MAIN_10 | STILL_PICTURE,
+    MULTILAYER_MAIN_10                   = 17,
+    MULTILAYER_MAIN_10_STILL_PICTURE     = MULTILAYER_MAIN_10 | STILL_PICTURE,
+    MAIN_10_444                          = 33,
+    MAIN_10_444_STILL_PICTURE            = MAIN_10_444 | STILL_PICTURE,
+    MULTILAYER_MAIN_10_444               = 49,
+    MULTILAYER_MAIN_10_444_STILL_PICTURE = MULTILAYER_MAIN_10_444 | STILL_PICTURE,
+#else
     NONE        = 0,
     MAIN_10     = 1,
     MAIN_444_10 = 2
+#endif
   };
 }
 

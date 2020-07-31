@@ -1678,7 +1678,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
     }
   }
 
-  READ_UVLC(     uiCode, "bit_depth_minus8" );
+  READ_UVLC(uiCode, "sps_bitdepth_minus8");
   CHECK(uiCode > 8, "Invalid bit depth signalled");
   pcSPS->setBitDepth(CHANNEL_TYPE_LUMA, 8 + uiCode);
   pcSPS->setBitDepth(CHANNEL_TYPE_CHROMA, 8 + uiCode);
@@ -1854,14 +1854,21 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
     for (int i = 0; i < numQpTables; i++)
     {
       int32_t qpTableStart = 0;
-      READ_SVLC(qpTableStart, "qp_table_starts_minus26"); chromaQpMappingTableParams.setQpTableStartMinus26(i, qpTableStart);
-      READ_UVLC(uiCode, "num_points_in_qp_table_minus1"); chromaQpMappingTableParams.setNumPtsInCQPTableMinus1(i,uiCode);
+      READ_SVLC(qpTableStart, "sps_qp_table_starts_minus26");
+      chromaQpMappingTableParams.setQpTableStartMinus26(i, qpTableStart);
+      CHECK(qpTableStart < -26 - pcSPS->getQpBDOffset(CHANNEL_TYPE_LUMA) || qpTableStart > 36,
+            "The value of sps_qp_table_start_minus26[ i ] shall be in the range of −26 − QpBdOffset to 36 inclusive");
+      READ_UVLC(uiCode, "sps_num_points_in_qp_table_minus1");
+      chromaQpMappingTableParams.setNumPtsInCQPTableMinus1(i, uiCode);
+      CHECK(uiCode > 36 - qpTableStart, "The value of sps_num_points_in_qp_table_minus1[ i ] shall be in the range of "
+                                        "0 to 36 - sps_qp_table_start_minus26[ i ], inclusive");
       std::vector<int> deltaQpInValMinus1(chromaQpMappingTableParams.getNumPtsInCQPTableMinus1(i) + 1);
       std::vector<int> deltaQpOutVal(chromaQpMappingTableParams.getNumPtsInCQPTableMinus1(i) + 1);
       for (int j = 0; j <= chromaQpMappingTableParams.getNumPtsInCQPTableMinus1(i); j++)
       {
-        READ_UVLC(uiCode, "delta_qp_in_val_minus1");  deltaQpInValMinus1[j] = uiCode;
-        READ_UVLC(uiCode, "delta_qp_diff_val");
+        READ_UVLC(uiCode, "sps_delta_qp_in_val_minus1");
+        deltaQpInValMinus1[j] = uiCode;
+        READ_UVLC(uiCode, "sps_delta_qp_diff_val");
         deltaQpOutVal[j] = uiCode ^ deltaQpInValMinus1[j];
       }
       chromaQpMappingTableParams.setDeltaQpInValMinus1(i, deltaQpInValMinus1);
@@ -2219,6 +2226,9 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
   }
 
   READ_FLAG(     uiCode, "field_seq_flag");                       pcSPS->setFieldSeqFlag(uiCode);
+#if JVET_S0138_GCI_PTL
+  CHECK( pcSPS->getProfileTierLevel()->getFrameOnlyConstraintFlag() && uiCode, "When ptl_frame_only_constraint_flag equal to 1 , the value of sps_field_seq_flag shall be equal to 0");
+#endif
 
   READ_FLAG( uiCode, "vui_parameters_present_flag" );             pcSPS->setVuiParametersPresentFlag(uiCode);
 
@@ -2272,8 +2282,6 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
             SPSRExt &spsRangeExtension = pcSPS->getSpsRangeExtension();
             READ_FLAG( uiCode, "transform_skip_rotation_enabled_flag");     spsRangeExtension.setTransformSkipRotationEnabledFlag(uiCode != 0);
             READ_FLAG( uiCode, "transform_skip_context_enabled_flag");      spsRangeExtension.setTransformSkipContextEnabledFlag (uiCode != 0);
-            READ_FLAG( uiCode, "implicit_rdpcm_enabled_flag");              spsRangeExtension.setRdpcmEnabledFlag(RDPCM_SIGNAL_IMPLICIT, (uiCode != 0));
-            READ_FLAG( uiCode, "explicit_rdpcm_enabled_flag");              spsRangeExtension.setRdpcmEnabledFlag(RDPCM_SIGNAL_EXPLICIT, (uiCode != 0));
             READ_FLAG( uiCode, "extended_precision_processing_flag");       spsRangeExtension.setExtendedPrecisionProcessingFlag (uiCode != 0);
             READ_FLAG( uiCode, "intra_smoothing_disabled_flag");            spsRangeExtension.setIntraSmoothingDisabledFlag      (uiCode != 0);
             READ_FLAG( uiCode, "high_precision_offsets_enabled_flag");      spsRangeExtension.setHighPrecisionOffsetsEnabledFlag (uiCode != 0);
@@ -2470,7 +2478,11 @@ void HLSyntaxReader::parseVPS(VPS* pcVPS)
   int cnt = 0;
   while (m_pcBitstream->getNumBitsUntilByteAligned())
   {
+#if JVET_S0138_GCI_PTL
+    READ_FLAG( uiCode, "vps_ptl_reserved_zero_bit");
+#else
     READ_FLAG( uiCode, "vps_ptl_alignment_zero_bit");
+#endif
     CHECK(uiCode!=0, "Alignment bit is not '0'");
     cnt++;
   }
@@ -4589,7 +4601,9 @@ void HLSyntaxReader::parseConstraintInfo(ConstraintInfo *cinfo)
 #if !JVET_S0266_VUI_length
     READ_FLAG(symbol,  "general_non_packed_constraint_flag"       ); cinfo->setNonPackedConstraintFlag(symbol ? true : false);
 #endif
+#if !JVET_S0138_GCI_PTL
     READ_FLAG(symbol,  "general_frame_only_constraint_flag"       ); cinfo->setFrameOnlyConstraintFlag(symbol ? true : false);
+#endif
 #if !JVET_S0266_VUI_length
     READ_FLAG(symbol,  "general_non_projected_constraint_flag"    ); cinfo->setNonProjectedConstraintFlag(symbol ? true : false);
 #endif
@@ -4604,7 +4618,9 @@ void HLSyntaxReader::parseConstraintInfo(ConstraintInfo *cinfo)
     READ_CODE(4, symbol,  "max_bitdepth_constraint_idc"              ); cinfo->setMaxBitDepthConstraintIdc(symbol);
     READ_CODE(2, symbol,  "max_chroma_format_constraint_idc"         ); cinfo->setMaxChromaFormatConstraintIdc((ChromaFormat)symbol);
 #endif
+#if !JVET_S0138_GCI_PTL
     READ_FLAG(symbol, "single_layer_constraint_flag");               cinfo->setSingleLayerConstraintFlag(symbol ? true : false);
+#endif
     READ_FLAG(symbol, "all_layers_independent_constraint_flag");     cinfo->setAllLayersIndependentConstraintFlag(symbol ? true : false);
 #if !JVET_S0050_GCI
     if (cinfo->getSingleLayerConstraintFlag())
@@ -4629,6 +4645,9 @@ void HLSyntaxReader::parseConstraintInfo(ConstraintInfo *cinfo)
     {
       CHECK(symbol == 0, "When max_chroma_format_constraint_idc is equal to 0, the value of no_qtbtt_dual_tree_intra_constraint_flag shall be equal to 1");
     }
+#endif
+#if JVET_S0066_GCI
+    READ_CODE(2, symbol,  "gci_three_minus_max_log2_ctu_size_constraint_idc"  ); cinfo->setMaxLog2CtuSizeConstraintIdc(((3-symbol)+5));
 #endif
     READ_FLAG(symbol, "no_partition_constraints_override_constraint_flag"); cinfo->setNoPartitionConstraintsOverrideConstraintFlag(symbol > 0 ? true : false);
     READ_FLAG(symbol,  "no_sao_constraint_flag");                    cinfo->setNoSaoConstraintFlag(symbol > 0 ? true : false);
@@ -4753,6 +4772,9 @@ void HLSyntaxReader::parseConstraintInfo(ConstraintInfo *cinfo)
     }
 #endif
     READ_FLAG(symbol, "no_ladf_constraint_flag");                    cinfo->setNoLadfConstraintFlag(symbol > 0 ? true : false);
+#if JVET_S0066_GCI
+    READ_FLAG(symbol, "gci_no_luma_transform_size_64_constraint_flag"); cinfo->setNoLumaTransformSize64ConstraintFlag(symbol > 0 ? true : false);
+#endif
     READ_FLAG(symbol, "no_transform_skip_constraint_flag");          cinfo->setNoTransformSkipConstraintFlag(symbol > 0 ? true : false);
     READ_FLAG(symbol, "no_bdpcm_constraint_flag");                   cinfo->setNoBDPCMConstraintFlag(symbol > 0 ? true : false);
     READ_FLAG(symbol, "no_palette_constraint_flag");                 cinfo->setNoPaletteConstraintFlag(symbol > 0 ? true : false);
@@ -4806,11 +4828,26 @@ void HLSyntaxReader::parseProfileTierLevel(ProfileTierLevel *ptl, bool profileTi
 
   READ_CODE( 8, symbol, "general_level_idc" ); ptl->setLevelIdc( Level::Name( symbol ) );
 
+#if JVET_S0138_GCI_PTL
+  READ_FLAG(      symbol,   "ptl_frame_only_constraint_flag"   ); ptl->setFrameOnlyConstraintFlag(symbol);
+  READ_FLAG(      symbol,   "ptl_multilayer_enabled_flag"      ); ptl->setMultiLayerEnabledFlag(symbol);
+#if JVET_S_PROFILES
+  CHECK((ptl->getProfileIdc() == Profile::MAIN_10 || ptl->getProfileIdc() == Profile::MAIN_10_444
+         || ptl->getProfileIdc() == Profile::MAIN_10_STILL_PICTURE
+         || ptl->getProfileIdc() == Profile::MAIN_10_444_STILL_PICTURE)
+          && symbol,
+        "ptl_multilayer_enabled_flag shall be equal to 0 for non-multilayer profiles");
+#else
+  CHECK( (ptl->getProfileIdc() == Profile::MAIN_10 || ptl->getProfileIdc() == Profile::MAIN_444_10) && symbol, "ptl_multilayer_enabled_flag shall be equal to 0 for Main 10 and Main 10 4:4:4 profiles");
+#endif
+#endif
+
   if(profileTierPresentFlag)
   {
 #if JVET_S0179_CONDITIONAL_SIGNAL_GCI
     parseConstraintInfo(ptl->getConstraintInfo());
 #endif
+#if !JVET_S_SUB_PROFILE
     READ_CODE(8, symbol, "num_sub_profiles");
     uint8_t numSubProfiles = symbol;
     ptl->setNumSubProfile( numSubProfiles );
@@ -4818,19 +4855,32 @@ void HLSyntaxReader::parseProfileTierLevel(ProfileTierLevel *ptl, bool profileTi
     {
       READ_CODE(32, symbol, "general_sub_profile_idc[i]"); ptl->setSubProfileIdc(i, symbol);
     }
+#endif
   }
 
+#if JVET_S0203
+  for (int i = maxNumSubLayersMinus1 - 1; i >= 0; i--)
+#else
   for (int i = 0; i < maxNumSubLayersMinus1; i++)
+#endif
   {
     READ_FLAG( symbol, "sub_layer_level_present_flag[i]"   ); ptl->setSubLayerLevelPresentFlag  (i, symbol);
   }
 
   while (!isByteAligned())
   {
+#if JVET_S0138_GCI_PTL
+    READ_FLAG(    symbol,   "ptl_reserved_zero_bit"         ); CHECK (symbol != 0, "ptl_reserved_zero_bit not equal to zero");
+#else
     READ_FLAG(    symbol,   "ptl_alignment_zero_bit"        ); CHECK (symbol != 0, "ptl_alignment_zero_bit not equal to zero");
+#endif
   }
 
+#if JVET_S0203
+  for (int i = maxNumSubLayersMinus1 - 1; i >= 0; i--)
+#else
   for (int i = 0; i < maxNumSubLayersMinus1; i++)
+#endif
   {
     if (ptl->getSubLayerLevelPresentFlag(i))
     {
@@ -4845,6 +4895,20 @@ void HLSyntaxReader::parseProfileTierLevel(ProfileTierLevel *ptl, bool profileTi
       ptl->setSubLayerLevelIdc( i, ptl->getSubLayerLevelIdc( i + 1 ) );
     }
   }
+
+#if JVET_S_SUB_PROFILE
+  if (profileTierPresentFlag)
+  {
+    READ_CODE(8, symbol, "ptl_num_sub_profiles");
+    uint8_t numSubProfiles = symbol;
+    ptl->setNumSubProfile(numSubProfiles);
+    for (int i = 0; i < numSubProfiles; i++)
+    {
+      READ_CODE(32, symbol, "general_sub_profile_idc[i]");
+      ptl->setSubProfileIdc(i, symbol);
+    }
+  }
+#endif
 }
 
 

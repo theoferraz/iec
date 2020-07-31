@@ -201,6 +201,19 @@ void EncApp::xInitLibCfg()
   ptls[0].setLevelIdc                                            ( m_level );
   ptls[0].setProfileIdc                                          ( m_profile);
   ptls[0].setTierFlag                                            ( m_levelTier );
+#if JVET_S0138_GCI_PTL
+  ptls[0].setFrameOnlyConstraintFlag                             ( m_frameOnlyConstraintFlag);
+  ptls[0].setMultiLayerEnabledFlag                               ( m_multiLayerEnabledFlag);
+#if JVET_S_PROFILES
+  CHECK((m_profile == Profile::MAIN_10 || m_profile == Profile::MAIN_10_444
+         || m_profile == Profile::MAIN_10_STILL_PICTURE || m_profile == Profile::MAIN_10_444_STILL_PICTURE)
+          && m_multiLayerEnabledFlag,
+        "ptl_multilayer_enabled_flag shall be equal to 0 for non-multilayer profiles");
+#else
+  CHECK( (m_profile == Profile::MAIN_10 || m_profile == Profile::MAIN_444_10) && m_multiLayerEnabledFlag, "ptl_multilayer_enabled_flag shall be equal to 0 for Main 10 and Main 10 4:4:4 profiles");
+#endif
+  CHECK( !m_multiLayerEnabledFlag && m_maxLayers > 1, "There is only one layer in the CVS when ptl_multilayer_enabled_flag equal to 0");
+#endif
   ptls[0].setNumSubProfile                                       ( m_numSubProfile );
   for (int i = 0; i < m_numSubProfile; i++)
   {
@@ -214,6 +227,10 @@ void EncApp::xInitLibCfg()
   vps.setVPSExtensionFlag                                        ( false );
   m_cEncLib.setProfile                                           ( m_profile);
   m_cEncLib.setLevel                                             ( m_levelTier, m_level);
+#if JVET_S0138_GCI_PTL
+  m_cEncLib.setFrameOnlyConstraintFlag                           ( m_frameOnlyConstraintFlag);
+  m_cEncLib.setMultiLayerEnabledFlag                             ( m_multiLayerEnabledFlag);
+#endif
   m_cEncLib.setNumSubProfile                                     ( m_numSubProfile );
   for (int i = 0; i < m_numSubProfile; i++)
   {
@@ -252,12 +269,16 @@ void EncApp::xInitLibCfg()
     m_cEncLib.setPicHeaderInSliceHeaderConstraintFlag(m_picHeaderInSliceHeaderConstraintFlag);
     m_cEncLib.setOneSlicePerPicConstraintFlag(m_oneSlicePerPicConstraintFlag);
     m_cEncLib.setOneSubpicPerPicConstraintFlag(m_oneSubpicPerPicConstraintFlag);
+#if !JVET_S0138_GCI_PTL
     m_cEncLib.setFrameOnlyConstraintFlag(m_frameOnlyConstraintFlag);
+#endif
     m_cEncLib.setOnePictureOnlyConstraintFlag(m_onePictureOnlyConstraintFlag);
     m_cEncLib.setIntraOnlyConstraintFlag(m_intraOnlyConstraintFlag);
     m_cEncLib.setNoIdrConstraintFlag(m_noIdrConstraintFlag);
     m_cEncLib.setNoGdrConstraintFlag(m_noGdrConstraintFlag);
+#if !JVET_S0138_GCI_PTL
     m_cEncLib.setSingleLayerConstraintFlag(m_singleLayerConstraintFlag);
+#endif
     m_cEncLib.setAllLayersIndependentConstraintFlag(m_allLayersIndependentConstraintFlag);
     m_cEncLib.setNoQpDeltaConstraintFlag(m_bNoQpDeltaConstraintFlag);
 
@@ -288,6 +309,11 @@ void EncApp::xInitLibCfg()
     m_cEncLib.setNoQtbttDualTreeIntraConstraintFlag(m_bNoQtbttDualTreeIntraConstraintFlag);
     CHECK(m_bNoQtbttDualTreeIntraConstraintFlag && m_dualTree, "Dual tree shall be deactivated when m_bNoQtbttDualTreeIntraConstraintFlag is equal to 1");
 
+#if JVET_S0066_GCI
+    m_cEncLib.setMaxLog2CtuSizeConstraintIdc(m_maxLog2CtuSizeConstraintIdc);
+    CHECK( m_uiCTUSize > (1<<(m_maxLog2CtuSizeConstraintIdc)), "CTUSize shall be less than or equal to 1 << m_maxLog2CtuSize");
+
+#endif
     m_cEncLib.setNoPartitionConstraintsOverrideConstraintFlag(m_noPartitionConstraintsOverrideConstraintFlag);
     CHECK(m_noPartitionConstraintsOverrideConstraintFlag && m_SplitConsOverrideEnabledFlag, "Partition override shall be deactivated when m_noPartitionConstraintsOverrideConstraintFlag is equal to 1");
 
@@ -349,6 +375,11 @@ void EncApp::xInitLibCfg()
     m_cEncLib.setNoTransformSkipConstraintFlag(m_noTransformSkipConstraintFlag);
     CHECK(m_noTransformSkipConstraintFlag && m_useTransformSkip, "Transform skip shall be deactivated when m_noTransformSkipConstraintFlag is equal to 1");
 
+#if JVET_S0066_GCI
+    m_cEncLib.setNoLumaTransformSize64ConstraintFlag(m_noLumaTransformSize64ConstraintFlag);
+    CHECK(m_noLumaTransformSize64ConstraintFlag && m_log2MaxTbSize > 5, "Max transform size shall be less than 64 when m_noLumaTransformSize64ConstraintFlag is equal to 1");
+
+#endif
     m_cEncLib.setNoBDPCMConstraintFlag(m_noBDPCMConstraintFlag);
     CHECK(m_noBDPCMConstraintFlag && m_useBDPCM, "BDPCM shall be deactivated when m_noBDPCMConstraintFlag is equal to 1");
 
@@ -406,14 +437,18 @@ void EncApp::xInitLibCfg()
   {
     m_cEncLib.setNonPackedConstraintFlag(false);
     m_cEncLib.setNonProjectedConstraintFlag(false);
+#if !JVET_S0138_GCI_PTL
     m_cEncLib.setSingleLayerConstraintFlag(false);
+#endif
     m_cEncLib.setAllLayersIndependentConstraintFlag(false);
     m_cEncLib.setNoResChangeInClvsConstraintFlag(false);
     m_cEncLib.setOneTilePerPicConstraintFlag(false);
     m_cEncLib.setPicHeaderInSliceHeaderConstraintFlag(false);
     m_cEncLib.setOneSlicePerPicConstraintFlag(false);
     m_cEncLib.setOneSubpicPerPicConstraintFlag(false);
+#if !JVET_S0138_GCI_PTL
     m_cEncLib.setFrameOnlyConstraintFlag(false);
+#endif
     m_cEncLib.setOnePictureOnlyConstraintFlag(false);
     m_cEncLib.setIntraOnlyConstraintFlag(false);
     m_cEncLib.setMaxBitDepthConstraintIdc(16);
@@ -718,10 +753,6 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setPersistentRiceAdaptationEnabledFlag               ( m_persistentRiceAdaptationEnabledFlag );
   m_cEncLib.setCabacBypassAlignmentEnabledFlag                   ( m_cabacBypassAlignmentEnabledFlag );
   m_cEncLib.setLog2MaxTransformSkipBlockSize                     ( m_log2MaxTransformSkipBlockSize  );
-  for (uint32_t signallingModeIndex = 0; signallingModeIndex < NUMBER_OF_RDPCM_SIGNALLING_MODES; signallingModeIndex++)
-  {
-    m_cEncLib.setRdpcmEnabledFlag                                ( RDPCMSignallingMode(signallingModeIndex), m_rdpcmEnabledFlag[signallingModeIndex]);
-  }
   m_cEncLib.setFastUDIUseMPMEnabled                              ( m_bFastUDIUseMPMEnabled );
   m_cEncLib.setFastMEForGenBLowDelayEnabled                      ( m_bFastMEForGenBLowDelayEnabled );
   m_cEncLib.setUseBLambdaForNonKeyLowDelayPictures               ( m_bUseBLambdaForNonKeyLowDelayPictures );

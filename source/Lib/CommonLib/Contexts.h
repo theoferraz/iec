@@ -249,13 +249,10 @@ public:
   static const CtxSet   RunTypeFlag;
   static const CtxSet   IdxRunModel;
   static const CtxSet   CopyRunModel;
-  static const CtxSet   RdpcmFlag;
-  static const CtxSet   RdpcmDir;
   static const CtxSet   SbtFlag;
   static const CtxSet   SbtQuadFlag;
   static const CtxSet   SbtHorFlag;
   static const CtxSet   SbtPosFlag;
-  static const CtxSet   CrossCompPred;
   static const CtxSet   ChromaQpAdjFlag;
   static const CtxSet   ChromaQpAdjIdc;
   static const CtxSet   ImvFlag;

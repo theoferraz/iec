@@ -40,7 +40,6 @@
 #include "UnitTools.h"
 #include "ContextModelling.h"
 #include "CodingStructure.h"
-#include "CrossCompPrediction.h"
 
 #include "dtrace_next.h"
 #include "dtrace_buffer.h"
@@ -540,7 +539,7 @@ void QuantRDOQ::quant(TransformUnit &tu, const ComponentID &compID, const CCoeff
       {
         if( (tu.cu->bdpcmMode && isLuma(compID)) || (isChroma(compID) && tu.cu->bdpcmModeChroma ) )
         {
-          forwardRDPCM( tu, compID, pSrc, uiAbsSum, cQP, ctx );
+          forwardBDPCM(tu, compID, pSrc, uiAbsSum, cQP, ctx);
         }
         else
         {
@@ -1399,7 +1398,8 @@ void QuantRDOQ::xRateDistOptQuantTS( TransformUnit &tu, const ComponentID &compI
   }
 }
 
-void QuantRDOQ::forwardRDPCM( TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &coeffs, TCoeff &absSum, const QpParam &qp, const Ctx &ctx )
+void QuantRDOQ::forwardBDPCM(TransformUnit &tu, const ComponentID &compID, const CCoeffBuf &coeffs, TCoeff &absSum,
+                             const QpParam &qp, const Ctx &ctx)
 {
   const FracBitsAccess& fracBits = ctx.getFracBitsAcess();
 

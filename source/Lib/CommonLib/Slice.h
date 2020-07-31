@@ -247,14 +247,17 @@ class ConstraintInfo
   bool              m_picHeaderInSliceHeaderConstraintFlag;
   bool              m_oneSlicePerPicConstraintFlag;
   bool              m_oneSubpicPerPicConstraintFlag;
+#if !JVET_S0138_GCI_PTL
   bool              m_frameOnlyConstraintFlag;
+#endif
   bool              m_intraOnlyConstraintFlag;
   uint32_t          m_maxBitDepthConstraintIdc;
   int               m_maxChromaFormatConstraintIdc;
   bool              m_onePictureOnlyConstraintFlag;
   bool              m_lowerBitRateConstraintFlag;
-
+#if !JVET_S0138_GCI_PTL
   bool              m_singleLayerConstraintFlag;
+#endif
   bool              m_allLayersIndependentConstraintFlag;
   bool              m_noMrlConstraintFlag;
   bool              m_noIspConstraintFlag;
@@ -272,6 +275,9 @@ class ConstraintInfo
   bool              m_noVirtualBoundaryConstraintFlag;
 #endif
   bool              m_noQtbttDualTreeIntraConstraintFlag;
+#if JVET_S0066_GCI
+  int               m_maxLog2CtuSizeConstraintIdc;
+#endif
   bool              m_noPartitionConstraintsOverrideConstraintFlag;
   bool              m_noSaoConstraintFlag;
   bool              m_noAlfConstraintFlag;
@@ -292,6 +298,9 @@ class ConstraintInfo
   bool              m_noGeoConstraintFlag;
   bool              m_noLadfConstraintFlag;
   bool              m_noTransformSkipConstraintFlag;
+#if JVET_S0066_GCI
+  bool              m_noLumaTransformSize64ConstraintFlag;
+#endif
   bool              m_noBDPCMConstraintFlag;
   bool              m_noJointCbCrConstraintFlag;
   bool              m_noQpDeltaConstraintFlag;
@@ -324,7 +333,9 @@ public:
     , m_picHeaderInSliceHeaderConstraintFlag(false)
     , m_oneSlicePerPicConstraintFlag(false)
     , m_oneSubpicPerPicConstraintFlag(false)
+#if !JVET_S0138_GCI_PTL
     , m_frameOnlyConstraintFlag  (false)
+#endif
     , m_intraOnlyConstraintFlag  (false)
 #if JVET_S0094_CHROMAFORMAT_BITDEPTH_CONSTRAINT
     , m_maxBitDepthConstraintIdc  (  16)
@@ -335,8 +346,9 @@ public:
 #endif
     , m_onePictureOnlyConstraintFlag (false)
     , m_lowerBitRateConstraintFlag (false )
-
+#if !JVET_S0138_GCI_PTL
     , m_singleLayerConstraintFlag(false)
+#endif
     , m_allLayersIndependentConstraintFlag(false)
     , m_noMrlConstraintFlag(false)
     , m_noIspConstraintFlag(false)
@@ -353,6 +365,9 @@ public:
     , m_noVirtualBoundaryConstraintFlag(false)
 #endif
     , m_noQtbttDualTreeIntraConstraintFlag(false)
+#if JVET_S0066_GCI
+    , m_maxLog2CtuSizeConstraintIdc(8)
+#endif
     , m_noPartitionConstraintsOverrideConstraintFlag(false)
     , m_noSaoConstraintFlag      (false)
     , m_noAlfConstraintFlag      (false)
@@ -373,6 +388,9 @@ public:
     , m_noGeoConstraintFlag      (false)
     , m_noLadfConstraintFlag     (false)
     , m_noTransformSkipConstraintFlag(false)
+#if JVET_S0066_GCI
+    , m_noLumaTransformSize64ConstraintFlag(false)
+#endif
     , m_noBDPCMConstraintFlag    (false)
     , m_noJointCbCrConstraintFlag (false)
     , m_noQpDeltaConstraintFlag  (false)
@@ -399,10 +417,10 @@ public:
   bool          getNonPackedConstraintFlag() const { return m_nonPackedConstraintFlag; }
   void          setNonPackedConstraintFlag(bool b) { m_nonPackedConstraintFlag = b; }
 #endif
-
+#if !JVET_S0138_GCI_PTL
   bool          getFrameOnlyConstraintFlag() const { return m_frameOnlyConstraintFlag; }
   void          setFrameOnlyConstraintFlag(bool b) { m_frameOnlyConstraintFlag = b; }
-
+#endif
   uint32_t      getMaxBitDepthConstraintIdc() const { return m_maxBitDepthConstraintIdc; }
   void          setMaxBitDepthConstraintIdc(uint32_t bitDepth) { m_maxBitDepthConstraintIdc = bitDepth; }
 
@@ -437,9 +455,10 @@ public:
 
   bool          getLowerBitRateConstraintFlag() const { return m_lowerBitRateConstraintFlag; }
   void          setLowerBitRateConstraintFlag(bool b) { m_lowerBitRateConstraintFlag = b; }
-
+#if !JVET_S0138_GCI_PTL
   bool          getSingleLayerConstraintFlag() const { return m_singleLayerConstraintFlag; }
   void          setSingleLayerConstraintFlag(bool b) { m_singleLayerConstraintFlag = b; }
+#endif
   bool          getAllLayersIndependentConstraintFlag() const { return m_allLayersIndependentConstraintFlag; }
   void          setAllLayersIndependentConstraintFlag(bool b) { m_allLayersIndependentConstraintFlag = b; }
   bool          getNoMrlConstraintFlag() const { return m_noMrlConstraintFlag; }
@@ -470,6 +489,10 @@ public:
 #endif
   bool          getNoQtbttDualTreeIntraConstraintFlag() const { return m_noQtbttDualTreeIntraConstraintFlag; }
   void          setNoQtbttDualTreeIntraConstraintFlag(bool bVal) { m_noQtbttDualTreeIntraConstraintFlag = bVal; }
+#if JVET_S0066_GCI
+  int           getMaxLog2CtuSizeConstraintIdc() const { return m_maxLog2CtuSizeConstraintIdc; }
+  void          setMaxLog2CtuSizeConstraintIdc(int idc) { m_maxLog2CtuSizeConstraintIdc = idc; }
+#endif
   bool          getNoPartitionConstraintsOverrideConstraintFlag() const { return m_noPartitionConstraintsOverrideConstraintFlag; }
   void          setNoPartitionConstraintsOverrideConstraintFlag(bool bVal) { m_noPartitionConstraintsOverrideConstraintFlag = bVal; }
   bool          getNoSaoConstraintFlag() const { return m_noSaoConstraintFlag; }
@@ -512,6 +535,10 @@ public:
   void          setNoLadfConstraintFlag(bool bVal) { m_noLadfConstraintFlag = bVal; }
   bool          getNoTransformSkipConstraintFlag() const { return m_noTransformSkipConstraintFlag; }
   void          setNoTransformSkipConstraintFlag(bool bVal) { m_noTransformSkipConstraintFlag = bVal; }
+#if JVET_S0066_GCI
+  bool          getNoLumaTransformSize64ConstraintFlag() const { return m_noLumaTransformSize64ConstraintFlag; }
+  void          setNoLumaTransformSize64ConstraintFlag(bool bVal) { m_noLumaTransformSize64ConstraintFlag = bVal; }
+#endif
   bool          getNoBDPCMConstraintFlag() const { return m_noBDPCMConstraintFlag; }
   void          setNoBDPCMConstraintFlag(bool bVal) { m_noBDPCMConstraintFlag = bVal; }
   bool          getNoQpDeltaConstraintFlag() const { return m_noQpDeltaConstraintFlag; }
@@ -550,7 +577,10 @@ class ProfileTierLevel
   uint8_t           m_numSubProfile;
   std::vector<uint32_t>          m_subProfileIdc;
   Level::Name       m_levelIdc;
-
+#if JVET_S0138_GCI_PTL
+  bool              m_frameOnlyConstraintFlag;
+  bool              m_multiLayerEnabledFlag;
+#endif
   ConstraintInfo    m_constraintInfo;
   bool              m_subLayerLevelPresentFlag[MAX_TLAYER - 1];
   Level::Name       m_subLayerLevelIdc[MAX_TLAYER];
@@ -573,6 +603,13 @@ public:
   Level::Name   getLevelIdc() const                         { return m_levelIdc;                    }
   void          setLevelIdc(Level::Name x)                  { m_levelIdc = x;                       }
 
+#if JVET_S0138_GCI_PTL
+  bool                    getFrameOnlyConstraintFlag() const { return m_frameOnlyConstraintFlag; }
+  void                    setFrameOnlyConstraintFlag(bool x) { m_frameOnlyConstraintFlag = x; }
+
+  bool                    getMultiLayerEnabledFlag() const { return m_multiLayerEnabledFlag; }
+  void                    setMultiLayerEnabledFlag(bool x) { m_multiLayerEnabledFlag = x; }
+#endif
 
   ConstraintInfo*         getConstraintInfo()              { return &m_constraintInfo; }
   const ConstraintInfo*   getConstraintInfo() const        { return &m_constraintInfo; }
@@ -1304,7 +1341,6 @@ class SPSRExt // Names aligned to text specification
 private:
   bool             m_transformSkipRotationEnabledFlag;
   bool             m_transformSkipContextEnabledFlag;
-  bool             m_rdpcmEnabledFlag[NUMBER_OF_RDPCM_SIGNALLING_MODES];
   bool             m_extendedPrecisionProcessingFlag;
   bool             m_intraSmoothingDisabledFlag;
   bool             m_highPrecisionOffsetsEnabledFlag;
@@ -1318,8 +1354,6 @@ public:
   {
     return getTransformSkipRotationEnabledFlag()
         || getTransformSkipContextEnabledFlag()
-        || getRdpcmEnabledFlag(RDPCM_SIGNAL_IMPLICIT)
-        || getRdpcmEnabledFlag(RDPCM_SIGNAL_EXPLICIT)
         || getExtendedPrecisionProcessingFlag()
         || getIntraSmoothingDisabledFlag()
         || getHighPrecisionOffsetsEnabledFlag()
@@ -1333,9 +1367,6 @@ public:
 
   bool getTransformSkipContextEnabledFlag() const                                      { return m_transformSkipContextEnabledFlag;      }
   void setTransformSkipContextEnabledFlag(const bool value)                            { m_transformSkipContextEnabledFlag = value;     }
-
-  bool getRdpcmEnabledFlag(const RDPCMSignallingMode signallingMode) const             { return m_rdpcmEnabledFlag[signallingMode];     }
-  void setRdpcmEnabledFlag(const RDPCMSignallingMode signallingMode, const bool value) { m_rdpcmEnabledFlag[signallingMode] = value;    }
 
   bool getExtendedPrecisionProcessingFlag() const                                      { return m_extendedPrecisionProcessingFlag;      }
   void setExtendedPrecisionProcessingFlag(bool value)                                  { m_extendedPrecisionProcessingFlag = value;     }
