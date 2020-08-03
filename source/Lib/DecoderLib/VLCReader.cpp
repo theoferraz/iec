@@ -381,11 +381,22 @@ void HLSyntaxReader::parseRefPicList(SPS* sps, ReferencePictureList* rpl, int rp
         code++;
       }
       int readValue = code;
+#if JVET_S0045_SIGN
+      if (readValue > 0)
+      {
+        READ_FLAG(code, "strp_entry_sign_flag[ listIdx ][ rplsIdx ][ i ]");
+        if (code)
+        {
+          readValue = -readValue;
+        }
+      }
+#else
       if (readValue > 0)
         READ_FLAG(code, "strp_entry_sign_flag[ listIdx ][ rplsIdx ][ i ]");
       else
         code = 1;
       readValue = (code) ? readValue : 0 - readValue; //true means positive delta POC -- false otherwise
+#endif
       if (firstSTRP)
       {
         firstSTRP = false;
@@ -1497,16 +1508,23 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
 #endif
 
   READ_FLAG( uiCode, "subpic_info_present_flag" );               pcSPS->setSubPicInfoPresentFlag(uiCode);
+#if JVET_S0113_S0195_GCI
+  if (pcSPS->getProfileTierLevel()->getConstraintInfo()->getNoSubpicInfoConstraintFlag())
+  {
+    CHECK(uiCode != 0, "When gci_no_subpic_info_constraint_flag is equal to 1, the value of subpic_info_present_flag shall be equal to 0");
+  }
+#endif
 
   if (pcSPS->getSubPicInfoPresentFlag())
   {
     READ_UVLC(uiCode, "sps_num_subpics_minus1"); pcSPS->setNumSubPics(uiCode + 1);
     CHECK(uiCode > (pcSPS->getMaxPicWidthInLumaSamples() / (1 << pcSPS->getCTUSize())) * (pcSPS->getMaxPicHeightInLumaSamples() / (1 << pcSPS->getCTUSize())) - 1, "Invalid sps_num_subpics_minus1 value");
+#if !JVET_S0113_S0195_GCI
     if (pcSPS->getProfileTierLevel()->getConstraintInfo()->getOneSubpicPerPicConstraintFlag())
     {
       CHECK(uiCode != 0, "When one_subpic_per_pic_constraint_flag is equal to 1, each picture shall contain only one subpicture");
     }
-
+#endif
     if( pcSPS->getNumSubPics() == 1 )
     {
       pcSPS->setSubPicCtuTopLeftX( 0, 0 );
@@ -1857,7 +1875,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
       READ_SVLC(qpTableStart, "sps_qp_table_starts_minus26");
       chromaQpMappingTableParams.setQpTableStartMinus26(i, qpTableStart);
       CHECK(qpTableStart < -26 - pcSPS->getQpBDOffset(CHANNEL_TYPE_LUMA) || qpTableStart > 36,
-            "The value of sps_qp_table_start_minus26[ i ] shall be in the range of −26 − QpBdOffset to 36 inclusive");
+            "The value of sps_qp_table_start_minus26[ i ] shall be in the range of -26 - QpBdOffset to 36 inclusive");
       READ_UVLC(uiCode, "sps_num_points_in_qp_table_minus1");
       chromaQpMappingTableParams.setNumPtsInCQPTableMinus1(i, uiCode);
       CHECK(uiCode > 36 - qpTableStart, "The value of sps_num_points_in_qp_table_minus1[ i ] shall be in the range of "
@@ -1915,6 +1933,13 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
     pcSPS->setInterLayerPresentFlag(0);
   }
   READ_FLAG( uiCode, "sps_idr_rpl_present_flag" );       pcSPS->setIDRRefParamListPresent( (bool) uiCode );
+#if JVET_S0113_S0195_GCI
+  if (pcSPS->getProfileTierLevel()->getConstraintInfo()->getNoIdrRplConstraintFlag())
+  {
+    CHECK(uiCode != 0, "When gci_no_idr_rpl_constraint_flag equal to 1 , the value of sps_idr_rpl_present_flag shall be equal to 0");
+  }
+#endif
+
   READ_FLAG(uiCode, "rpl1_copy_from_rpl0_flag");
   pcSPS->setRPL1CopyFromRPL0Flag(uiCode);
 
@@ -1960,7 +1985,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
   {
     for (int i = 0; i < pcSPS->getNumSubPics(); i++)
     {
-      CHECK(pcSPS->getSubPicTreatedAsPicFlag(i) && (pcSPS->getSubPicWidth(i) != (pcSPS->getMaxPicWidthInLumaSamples() + pcSPS->getCTUSize() - 1) / pcSPS->getCTUSize()), "sps_ref_wraparound_enabled_flag cannot be equal to 1 when there is at least one subpicture with SubPicTreatedAsPicFlag equal to 1 and the subpicture’s width is not equal to picture’s width");
+      CHECK(pcSPS->getSubPicTreatedAsPicFlag(i) && (pcSPS->getSubPicWidth(i) != (pcSPS->getMaxPicWidthInLumaSamples() + pcSPS->getCTUSize() - 1) / pcSPS->getCTUSize()), "sps_ref_wraparound_enabled_flag cannot be equal to 1 when there is at least one subpicture with SubPicTreatedAsPicFlag equal to 1 and the subpicture's width is not equal to picture's width");
     }
   }
 
@@ -3252,7 +3277,8 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
       picHeader->setPicColFromL0Flag(0);
     }
 
-  // mvd L1 zero flag
+#if !JVET_R0324_REORDER
+    // mvd L1 zero flag
     if (!pps->getRplInfoInPhFlag() || picHeader->getRPL(1)->getNumRefEntries() > 0)
     {
       READ_FLAG(uiCode, "pic_mvd_l1_zero_flag");
@@ -3262,9 +3288,10 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
       uiCode = 1;
     }
     picHeader->setMvdL1ZeroFlag( uiCode != 0 );
+#endif
 
-  // merge candidate list size
-  // subblock merge candidate list size
+    // merge candidate list size
+    // subblock merge candidate list size
     if ( sps->getUseAffine() )
     {
       picHeader->setMaxNumAffineMergeCand(sps->getMaxNumAffineMergeCand());
@@ -3285,7 +3312,20 @@ void HLSyntaxReader::parsePictureHeader( PicHeader* picHeader, ParameterSetManag
       picHeader->setDisFracMMVD(false);
     }
 
-  // picture level BDOF disable flags
+#if JVET_R0324_REORDER
+    // mvd L1 zero flag
+    if (!pps->getRplInfoInPhFlag() || picHeader->getRPL(1)->getNumRefEntries() > 0)
+    {
+      READ_FLAG(uiCode, "ph_mvd_l1_zero_flag");
+    }
+    else
+    {
+      uiCode = 1;
+    }
+    picHeader->setMvdL1ZeroFlag(uiCode != 0);
+#endif
+
+    // picture level BDOF disable flags
     if (sps->getBdofControlPresentFlag() && (!pps->getRplInfoInPhFlag() || picHeader->getRPL(1)->getNumRefEntries() > 0))
     {
       READ_FLAG(uiCode, "ph_disable_bdof_flag");  picHeader->setDisBdofFlag(uiCode != 0);
@@ -4629,10 +4669,19 @@ void HLSyntaxReader::parseConstraintInfo(ConstraintInfo *cinfo)
     }
 #endif
     READ_FLAG(symbol,  "no_res_change_in_clvs_constraint_flag"    ); cinfo->setNoResChangeInClvsConstraintFlag(symbol ? true : false);
+#if JVET_S0113_S0195_GCI
+    READ_FLAG(symbol, "gci_no_idr_rpl_constraint_flag"            ); cinfo->setNoIdrRplConstraintFlag(symbol ? true : false);
+#endif
     READ_FLAG(symbol,  "one_tile_per_pic_constraint_flag"         ); cinfo->setOneTilePerPicConstraintFlag(symbol ? true : false);
     READ_FLAG(symbol,  "pic_header_in_slice_header_constraint_flag"); cinfo->setPicHeaderInSliceHeaderConstraintFlag(symbol ? true : false);
     READ_FLAG(symbol,  "one_slice_per_pic_constraint_flag"        ); cinfo->setOneSlicePerPicConstraintFlag(symbol ? true : false);
+#if JVET_S0113_S0195_GCI
+    READ_FLAG(symbol,  "gci_no_rectangular_slice_constraint_flag" ); cinfo->setNoRectSliceConstraintFlag(symbol ? true : false);
+    READ_FLAG(symbol,  "gci_one_slice_per_subpic_constraint_flag" ); cinfo->setOneSlicePerSubpicConstraintFlag(symbol ? true : false);
+    READ_FLAG(symbol,  "gci_no_subpic_info_constraint_flag"       ); cinfo->setNoSubpicInfoConstraintFlag(symbol ? true : false);
+#else
     READ_FLAG(symbol,  "one_subpic_per_pic_constraint_flag"       ); cinfo->setOneSubpicPerPicConstraintFlag(symbol ? true : false);
+#endif
 #if !JVET_S0050_GCI
     if (cinfo->getOneSlicePerPicConstraintFlag())
     {

@@ -496,7 +496,11 @@ void Slice::constructRefPicList(PicList& rcListPic)
     else
     if (!m_pRPL0->isRefPicLongterm(ii))
     {
+#if JVET_S0045_SIGN
+      pcRefPic = xGetRefPic(rcListPic, getPOC() + m_pRPL0->getRefPicIdentifier(ii), m_pcPic->layerId);
+#else
       pcRefPic = xGetRefPic( rcListPic, getPOC() - m_pRPL0->getRefPicIdentifier( ii ), m_pcPic->layerId );
+#endif
       pcRefPic->longTerm = false;
     }
     else
@@ -532,7 +536,11 @@ void Slice::constructRefPicList(PicList& rcListPic)
     else
     if (!m_pRPL1->isRefPicLongterm(ii))
     {
+#if JVET_S0045_SIGN
+      pcRefPic = xGetRefPic(rcListPic, getPOC() + m_pRPL1->getRefPicIdentifier(ii), m_pcPic->layerId);
+#else
       pcRefPic = xGetRefPic( rcListPic, getPOC() - m_pRPL1->getRefPicIdentifier( ii ), m_pcPic->layerId );
+#endif
       pcRefPic->longTerm = false;
     }
     else
@@ -600,7 +608,11 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
     {
       if (!pRPL0->isRefPicLongterm(i))
       {
+#if JVET_S0045_SIGN
+        CHECK(getPOC() + pRPL0->getRefPicIdentifier(i) < pocCRA, "Invalid state");
+#else
         CHECK(getPOC() - pRPL0->getRefPicIdentifier(i) < pocCRA, "Invalid state");
+#endif
       }
       else
       {
@@ -619,7 +631,11 @@ void Slice::checkCRA(const ReferencePictureList* pRPL0, const ReferencePictureLi
     {
       if (!pRPL1->isRefPicLongterm(i))
       {
+#if JVET_S0045_SIGN
+        CHECK(getPOC() + pRPL1->getRefPicIdentifier(i) < pocCRA, "Invalid state");
+#else
         CHECK(getPOC() - pRPL1->getRefPicIdentifier(i) < pocCRA, "Invalid state");
+#endif
       }
       else if( !pRPL1->isInterLayerRefPic( i ) )
       {
@@ -661,7 +677,11 @@ void Slice::checkRPL(const ReferencePictureList* pRPL0, const ReferencePictureLi
       }
       else if( !rpl[refPicList]->isRefPicLongterm( i ) )
       {
+#if JVET_S0045_SIGN
+        refPicPOC = m_iPOC + rpl[refPicList]->getRefPicIdentifier(i);
+#else
         refPicPOC = m_iPOC - rpl[refPicList]->getRefPicIdentifier( i );
+#endif
         pcRefPic = xGetRefPic( rcListPic, refPicPOC, m_pcPic->layerId );
       }
       else
@@ -768,7 +788,11 @@ void Slice::checkRPL(const ReferencePictureList* pRPL0, const ReferencePictureLi
     }
     else if (!pRPL0->isRefPicLongterm(i))
     {
+#if JVET_S0045_SIGN
+      refPicPOC = getPOC() + pRPL0->getRefPicIdentifier(i);
+#else
       refPicPOC = getPOC() - pRPL0->getRefPicIdentifier(i);
+#endif
       pcRefPic = xGetRefPic(rcListPic, refPicPOC, m_pcPic->layerId);
     }
     else
@@ -837,7 +861,11 @@ void Slice::checkRPL(const ReferencePictureList* pRPL0, const ReferencePictureLi
     }
     else if (!pRPL1->isRefPicLongterm(i))
     {
+#if JVET_S0045_SIGN
+      refPicPOC = getPOC() + pRPL1->getRefPicIdentifier(i);
+#else
       refPicPOC = getPOC() - pRPL1->getRefPicIdentifier(i);
+#endif
       pcRefPic = xGetRefPic(rcListPic, refPicPOC, m_pcPic->layerId);
     }
     else
@@ -1520,7 +1548,11 @@ void Slice::checkSubpicTypeConstraints( PicList& rcListPic, const ReferencePictu
       }
       else if( !rpl[refPicList]->isRefPicLongterm( i ) )
       {
-        refPicPOC = m_iPOC - rpl[refPicList]->getRefPicIdentifier( i );
+#if JVET_S0045_SIGN
+        refPicPOC = m_iPOC + rpl[refPicList]->getRefPicIdentifier(i);
+#else
+        refPicPOC = m_iPOC - rpl[refPicList]->getRefPicIdentifier(i);
+#endif
         pcRefPic = xGetRefPic( rcListPic, refPicPOC, m_pcPic->layerId );
       }
       else
@@ -1773,7 +1805,11 @@ void Slice::applyReferencePictureListBasedMarking( PicList& rcListPic, const Ref
       {
       if (!(pRPL0->isRefPicLongterm(i)))
       {
+#if JVET_S0045_SIGN
+        if (pcPic->poc == this->getPOC() + pRPL0->getRefPicIdentifier(i))
+#else
         if (pcPic->poc == this->getPOC() - pRPL0->getRefPicIdentifier(i))
+#endif
         {
           isReference = 1;
           pcPic->longTerm = false;
@@ -1818,7 +1854,11 @@ void Slice::applyReferencePictureListBasedMarking( PicList& rcListPic, const Ref
       {
       if (!(pRPL1->isRefPicLongterm(i)))
       {
+#if JVET_S0045_SIGN
+        if (pcPic->poc == this->getPOC() + pRPL1->getRefPicIdentifier(i))
+#else
         if (pcPic->poc == this->getPOC() - pRPL1->getRefPicIdentifier(i))
+#endif
         {
           isReference = 1;
           pcPic->longTerm = false;
@@ -1946,13 +1986,21 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
     if (pRPL->isRefPicLongterm(ii))
       continue;
 
+#if JVET_S0045_SIGN
+    notPresentPoc = this->getPOC() + pRPL->getRefPicIdentifier(ii);
+#else
     notPresentPoc = this->getPOC() - pRPL->getRefPicIdentifier(ii);
+#endif
     isAvailable = 0;
     PicList::iterator iterPic = rcListPic.begin();
     while (iterPic != rcListPic.end())
     {
       rpcPic = *(iterPic++);
+#if JVET_S0045_SIGN
+      if (!rpcPic->longTerm && rpcPic->getPOC() == this->getPOC() + pRPL->getRefPicIdentifier(ii) && rpcPic->referenced)
+#else
       if (!rpcPic->longTerm && rpcPic->getPOC() == this->getPOC() - pRPL->getRefPicIdentifier(ii) && rpcPic->referenced)
+#endif
       {
         isAvailable = 1;
         break;
@@ -2057,13 +2105,21 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
     if (pRPL->isRefPicLongterm(ii))
       continue;
 
+#if JVET_S0045_SIGN
+    notPresentPoc = this->getPOC() + pRPL->getRefPicIdentifier(ii);
+#else
     notPresentPoc = this->getPOC() - pRPL->getRefPicIdentifier(ii);
+#endif
     isAvailable = 0;
     PicList::iterator iterPic = rcListPic.begin();
     while (iterPic != rcListPic.end())
     {
       rpcPic = *(iterPic++);
+#if JVET_S0045_SIGN
+      if (!rpcPic->longTerm && rpcPic->getPOC() == this->getPOC() + pRPL->getRefPicIdentifier(ii) && rpcPic->referenced)
+#else
       if (!rpcPic->longTerm && rpcPic->getPOC() == this->getPOC() - pRPL->getRefPicIdentifier(ii) && rpcPic->referenced)
+#endif
       {
         isAvailable = 1;
         break;
@@ -2107,7 +2163,11 @@ bool Slice::isPOCInRefPicList(const ReferencePictureList *rpl, int poc )
     }
     else
     {
+#if JVET_S0045_SIGN
+      if (poc == getPOC() + rpl->getRefPicIdentifier(i))
+#else
       if (poc == getPOC() - rpl->getRefPicIdentifier(i))
+#endif
       {
         return true;
       }

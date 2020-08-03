@@ -236,8 +236,15 @@ void HLSWriter::xCodeRefPicList( const ReferencePictureList* rpl, bool isLongTer
       }
       else
       WRITE_UVLC(absDeltaValue, "abs_delta_poc_st[ listIdx ][ rplsIdx ][ i ]");
+#if JVET_S0045_SIGN
+      if (absDeltaValue > 0)
+      {
+        WRITE_FLAG(deltaValue < 0 ? 1 : 0, "strp_entry_sign_flag[ listIdx ][ rplsIdx ][ i ]");
+      }
+#else
       if (absDeltaValue > 0)
         WRITE_FLAG((deltaValue < 0) ? 0 : 1, "strp_entry_sign_flag[ listIdx ][ rplsIdx ][ i ]");  //0  means negative delta POC : 1 means positive
+#endif
     }
     else if (!rpl->getLtrpInSliceHeaderFlag())
     {
@@ -2038,13 +2045,16 @@ WRITE_FLAG(picHeader->getGdrOrIrapPicFlag(), "gdr_or_irap_pic_flag");
       picHeader->setEnableTMVPFlag(false);
     }
 
-  // mvd L1 zero flag
+#if !JVET_R0324_REORDER
+    // mvd L1 zero flag
     if (!pps->getRplInfoInPhFlag() || picHeader->getRPL(1)->getNumRefEntries() > 0)
     {
       WRITE_FLAG(picHeader->getMvdL1ZeroFlag(), "pic_mvd_l1_zero_flag");
     }
-  // merge candidate list size
-  // subblock merge candidate list size
+#endif
+
+    // merge candidate list size
+    // subblock merge candidate list size
     if ( sps->getUseAffine() )
     {
       picHeader->setMaxNumAffineMergeCand(sps->getMaxNumAffineMergeCand());
@@ -2064,7 +2074,15 @@ WRITE_FLAG(picHeader->getGdrOrIrapPicFlag(), "gdr_or_irap_pic_flag");
       picHeader->setDisFracMMVD(false);
     }
 
-  // picture level BDOF disable flags
+#if JVET_R0324_REORDER
+    // mvd L1 zero flag
+    if (!pps->getRplInfoInPhFlag() || picHeader->getRPL(1)->getNumRefEntries() > 0)
+    {
+      WRITE_FLAG(picHeader->getMvdL1ZeroFlag(), "ph_mvd_l1_zero_flag");
+    }
+#endif
+
+    // picture level BDOF disable flags
     if (sps->getBdofControlPresentFlag() && (!pps->getRplInfoInPhFlag() || picHeader->getRPL(1)->getNumRefEntries() > 0))
     {
       WRITE_FLAG(picHeader->getDisBdofFlag(), "ph_disable_bdof_flag");
@@ -2691,10 +2709,19 @@ void  HLSWriter::codeConstraintInfo  ( const ConstraintInfo* cinfo )
 #endif
     WRITE_FLAG(cinfo->getAllLayersIndependentConstraintFlag(), "all_layers_independent_constraint_flag");
     WRITE_FLAG(cinfo->getNoResChangeInClvsConstraintFlag(), "no_res_change_in_clvs_constraint_flag");
+#if JVET_S0113_S0195_GCI
+    WRITE_FLAG(cinfo->getNoIdrRplConstraintFlag(), "gci_no_idr_rpl_constraint_flag");
+#endif
     WRITE_FLAG(cinfo->getOneTilePerPicConstraintFlag(), "one_tile_per_pic_constraint_flag");
     WRITE_FLAG(cinfo->getPicHeaderInSliceHeaderConstraintFlag(), "pic_header_in_slice_header_constraint_flag");
     WRITE_FLAG(cinfo->getOneSlicePerPicConstraintFlag(), "one_slice_per_pic_constraint_flag");
+#if JVET_S0113_S0195_GCI
+    WRITE_FLAG(cinfo->getNoRectSliceConstraintFlag(), "gci_no_rectangular_slice_constraint_flag");
+    WRITE_FLAG(cinfo->getOneSlicePerSubpicConstraintFlag(), "gci_one_slice_per_subpic_constraint_flag");
+    WRITE_FLAG(cinfo->getNoSubpicInfoConstraintFlag(), "gci_no_subpic_info_constraint_flag");
+#else
     WRITE_FLAG(cinfo->getOneSubpicPerPicConstraintFlag(), "one_subpic_per_pic_constraint_flag");
+#endif
 
     WRITE_FLAG(cinfo->getNoQtbttDualTreeIntraConstraintFlag() ? 1 : 0, "no_qtbtt_dual_tree_intra_constraint_flag");
 #if JVET_S0066_GCI

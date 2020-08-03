@@ -1127,7 +1127,14 @@ void EncLib::xInitSPS( SPS& sps )
   cinfo->setOneTilePerPicConstraintFlag(m_oneTilePerPicConstraintFlag);
   cinfo->setPicHeaderInSliceHeaderConstraintFlag(m_picHeaderInSliceHeaderConstraintFlag);
   cinfo->setOneSlicePerPicConstraintFlag(m_oneSlicePerPicConstraintFlag);
+#if JVET_S0113_S0195_GCI
+  cinfo->setNoIdrRplConstraintFlag(m_noIdrRplConstraintFlag);
+  cinfo->setNoRectSliceConstraintFlag(m_noRectSliceConstraintFlag);
+  cinfo->setOneSlicePerSubpicConstraintFlag(m_oneSlicePerSubpicConstraintFlag);
+  cinfo->setNoSubpicInfoConstraintFlag(m_noSubpicInfoConstraintFlag);
+#else
   cinfo->setOneSubpicPerPicConstraintFlag(m_oneSubpicPerPicConstraintFlag);
+#endif
 #if !JVET_S0138_GCI_PTL
   cinfo->setFrameOnlyConstraintFlag     (m_frameOnlyConstraintFlag);
 #endif
@@ -1960,7 +1967,11 @@ void EncLib::xInitRPL(SPS &sps, bool isFieldCoding)
 
       for (int k = 0; k < ge.m_numRefPics; k++)
       {
+#if JVET_S0045_SIGN
+        rpl->setRefPicIdentifier(k, -ge.m_deltaRefPics[k], 0, false, 0);
+#else
         rpl->setRefPicIdentifier( k, ge.m_deltaRefPics[k], 0, false, 0 );
+#endif
       }
     }
   }
@@ -1976,7 +1987,11 @@ void EncLib::xInitRPL(SPS &sps, bool isFieldCoding)
       rpl->setNumberOfLongtermPictures(0);
       rpl->setNumberOfActivePictures(1);
       rpl->setLtrpInSliceHeaderFlag(0);
+#if JVET_S0045_SIGN
+      rpl->setRefPicIdentifier(0, -1, 0, false, 0);
+#else
       rpl->setRefPicIdentifier(0, 1, 0, false, 0);
+#endif
       rpl->setPOC(0, 0);
     }
   }

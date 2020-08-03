@@ -62,6 +62,8 @@
 
 #define JVET_S_SUB_PROFILE                                1 // Move signalling of ptl_num_sub_profiles
 
+#define JVET_R0324_REORDER                                1 // Reordering of syntax elements JVET-R0324/JVET-R2001-v2
+
 #define JVET_S0219_ASPECT2_CHANGE_ORDER_APS_PARAMS_TYPE   1 // JVET-S0219 aspect2: change the order to put the aps_params_type before the aps_adaptation_parameter_set_id.
 
 #define JVET_R0270                                        1 // JVET-S0270: Treating picture with mixed RASL and RADL slices as RASL picture
@@ -71,6 +73,8 @@
 #define JVET_R0433                                        1 // JVET-R0433: APS signaling and semantics cleanup
 
 #define JVET_S0076_ASPECT1                                1 // JVET-S0076: aspect 1: Move ph_non_ref_pic_flag to earlier position
+
+#define JVET_S0045_SIGN                                   1 // JVET-S0045: semantics of strp_entry_sign_flag
 
 #define JVET_S0133_PH_SYNTAX_OVERRIDE_ENC_FIX             1 // JVET-S0133: Encoder-only fix on the override of partition constriants in PH
 
@@ -146,6 +150,11 @@
                                                             //             Remove all constraints that require GCI fields to be equal to a value that imposes a constraint
 
 #define JVET_S0138_GCI_PTL                                1 // JVET-S_Notes_d9: move frame_only_constraint_flag and single_layer_constraint_flag into PTL for easy access
+
+#define JVET_S0113_S0195_GCI                              1 // JVET-S0113: no_rectangular_slice_constraint_flag to constrain pps_rect_slice_flag 
+                                                            //             one_slice_per_subpicture_constraint_flag to constrain pps_single_slice_per_subpic_flag
+                                                            // JVET-S0195: replace one_subpic_per_pic_constraint_flag with no_subpic_info_constraint_flag and its semantics
+                                                            //             add no_idr_rpl_constraint_flag
 
 #define JVET_S0182_RPL_SIGNALLING                         1 // JVET-S0182: modifications to rpl information signalling
 
