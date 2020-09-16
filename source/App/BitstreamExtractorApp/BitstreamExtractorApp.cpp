@@ -597,9 +597,15 @@ uint32_t BitstreamExtractorApp::decode()
         {
           CHECK(m_targetOlsIdx != 0, "only one OLS and one layer exist, but target olsIdx is not equal to zero");
         }
+#if JVET_S0086_AUD_SUBBITSTREAM
+        // Remove NAL units with nal_unit_type not equal to any of VPS_NUT, DPS_NUT, AUD_NUT and EOB_NUT and with nuh_layer_id not included in the list LayerIdInOls[targetOlsIdx].
+        NalUnitType t = nalu.m_nalUnitType;
+        bool isSpecialNalTypes = t == NAL_UNIT_VPS || t == NAL_UNIT_DCI || t == NAL_UNIT_EOB || t == NAL_UNIT_ACCESS_UNIT_DELIMITER;
+#else
         // Remove NAL units with nal_unit_type not equal to any of VPS_NUT, DPS_NUT, and EOB_NUT and with nuh_layer_id not included in the list LayerIdInOls[targetOlsIdx].
         NalUnitType t = nalu.m_nalUnitType;
         bool isSpecialNalTypes = t == NAL_UNIT_VPS || t == NAL_UNIT_DCI || t == NAL_UNIT_EOB;
+#endif
         vps = m_parameterSetManager.getVPS(m_vpsId);
         if (m_vpsId == 0)
         {
