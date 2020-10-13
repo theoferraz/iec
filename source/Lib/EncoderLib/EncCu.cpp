@@ -3070,7 +3070,7 @@ void EncCu::xCheckRDCostMergeGeo2Nx2N(CodingStructure *&tempCS, CodingStructure 
       pu.geoMergeIdx0 = comboList.list[candidateIdx].mergeIdx0;
       pu.geoMergeIdx1 = comboList.list[candidateIdx].mergeIdx1;
       pu.mmvdMergeFlag = false;
-      pu.mmvdMergeIdx = MAX_UINT;
+      pu.mmvdMergeIdx = MAX_UCHAR;
 
       PU::spanGeoMotionInfo(pu, mergeCtx, pu.geoSplitDir, pu.geoMergeIdx0, pu.geoMergeIdx1);
       tempCS->getPredBuf().copyFrom(geoCombinations[candidateIdx]);

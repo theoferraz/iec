@@ -685,7 +685,7 @@ bool PU::isDMChromaMIP(const PredictionUnit &pu)
   return !pu.cu->isSepTree() && (pu.chromaFormat == CHROMA_444) && getCoLocatedLumaPU(pu).cu->mipFlag;
 }
 
-uint32_t PU::getIntraDirLuma( const PredictionUnit &pu )
+uint8_t PU::getIntraDirLuma( const PredictionUnit &pu )
 {
   if (isMIP(pu))
   {
@@ -755,7 +755,7 @@ bool PU::isChromaIntraModeCrossCheckMode( const PredictionUnit &pu )
   return !pu.cu->bdpcmModeChroma && pu.intraDir[CHANNEL_TYPE_CHROMA] == DM_CHROMA_IDX;
 }
 
-uint32_t PU::getFinalIntraMode( const PredictionUnit &pu, const ChannelType &chType )
+uint8_t PU::getFinalIntraMode( const PredictionUnit &pu, const ChannelType &chType )
 {
   uint32_t uiIntraMode = pu.intraDir[chType];
 
@@ -781,7 +781,7 @@ const PredictionUnit &PU::getCoLocatedLumaPU(const PredictionUnit &pu)
   return lumaPU;
 }
 
-uint32_t PU::getCoLocatedIntraLumaMode(const PredictionUnit &pu)
+uint8_t PU::getCoLocatedIntraLumaMode(const PredictionUnit &pu)
 {
   return PU::getIntraDirLuma(PU::getCoLocatedLumaPU(pu));
 }

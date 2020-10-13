@@ -5440,7 +5440,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
 
 uint64_t IntraSearch::xFracModeBitsIntra(PredictionUnit &pu, const uint32_t &uiMode, const ChannelType &chType)
 {
-  uint32_t orgMode = uiMode;
+  uint8_t orgMode = uiMode;
 
   if (!pu.ciipFlag)
   std::swap(orgMode, pu.intraDir[chType]);

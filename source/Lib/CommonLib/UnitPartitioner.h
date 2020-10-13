@@ -53,7 +53,7 @@ typedef std::vector <UnitArea> Partitioning;
 // being processed (in m_partStack).
 //////////////////////////////////////////////////////////////////////////
 
-enum PartSplit
+enum PartSplit : uint8_t
 {
   CTU_LEVEL        = 0,
   CU_QUAD_SPLIT,
@@ -75,9 +75,9 @@ enum PartSplit
   SBT_HOR_QUAD_POS0_SPLIT,
   SBT_HOR_QUAD_POS1_SPLIT,
   NUM_PART_SPLIT,
-  CU_MT_SPLIT             = 1000, ///< dummy element to indicate the MT (multi-type-tree) split
-  CU_BT_SPLIT             = 1001, ///< dummy element to indicate the BT split
-  CU_DONT_SPLIT           = 2000  ///< dummy element to indicate no splitting
+  CU_MT_SPLIT             = 100, ///< dummy element to indicate the MT (multi-type-tree) split
+  CU_BT_SPLIT             = 101, ///< dummy element to indicate the BT split
+  CU_DONT_SPLIT           = 200  ///< dummy element to indicate no splitting
 };
 
 

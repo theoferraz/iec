@@ -317,7 +317,7 @@ struct CodingUnit : public UnitArea
   uint8_t        sbtInfo;
   uint32_t           tileIdx;
   uint8_t         mtsFlag;
-  uint32_t        lfnstIdx;
+  uint8_t         lfnstIdx;
   uint8_t         BcwIdx;
   int             refIdxBi[2];
   bool           mipFlag;
@@ -374,7 +374,7 @@ struct CodingUnit : public UnitArea
 
 struct IntraPredictionData
 {
-  uint32_t  intraDir[MAX_NUM_CHANNEL_TYPE];
+  uint8_t   intraDir[MAX_NUM_CHANNEL_TYPE];
   bool      mipTransposedFlag;
   int       multiRefIdx;
 };
@@ -383,18 +383,18 @@ struct InterPredictionData
 {
   bool      mergeFlag;
   bool      regularMergeFlag;
-  uint8_t     mergeIdx;
-  uint8_t     geoSplitDir;
-  uint8_t     geoMergeIdx0;
-  uint8_t     geoMergeIdx1;
-  bool           mmvdMergeFlag;
-  uint32_t       mmvdMergeIdx;
-  uint8_t     interDir;
-  uint8_t     mvpIdx  [NUM_REF_PIC_LIST_01];
-  uint8_t     mvpNum  [NUM_REF_PIC_LIST_01];
+  uint8_t   mergeIdx;
+  uint8_t   geoSplitDir;
+  uint8_t   geoMergeIdx0;
+  uint8_t   geoMergeIdx1;
+  bool      mmvdMergeFlag;
+  uint8_t   mmvdMergeIdx;
+  uint8_t   interDir;
+  uint8_t   mvpIdx  [NUM_REF_PIC_LIST_01];
+  uint8_t   mvpNum  [NUM_REF_PIC_LIST_01];
   Mv        mvd     [NUM_REF_PIC_LIST_01];
   Mv        mv      [NUM_REF_PIC_LIST_01];
-  int16_t     refIdx  [NUM_REF_PIC_LIST_01];
+  int16_t   refIdx  [NUM_REF_PIC_LIST_01];
   MergeType mergeType;
   bool      mvRefine;
   Mv        mvdL0SubPu[MAX_NUM_SUBCU_DMVR];

@@ -370,7 +370,7 @@ enum SliceType
 };
 
 /// chroma formats (according to how the monochrome or the color planes are intended to be coded)
-enum ChromaFormat
+enum ChromaFormat /* : uint8_t */ // uint8 --> crash in simdInterpolateLuma10Bit2P16 (AVX2)
 {
   CHROMA_400        = 0,
   CHROMA_420        = 1,
@@ -379,21 +379,21 @@ enum ChromaFormat
   NUM_CHROMA_FORMAT = 4
 };
 
-enum ChannelType
+enum ChannelType : uint8_t
 {
   CHANNEL_TYPE_LUMA    = 0,
   CHANNEL_TYPE_CHROMA  = 1,
   MAX_NUM_CHANNEL_TYPE = 2
 };
 
-enum TreeType
+enum TreeType : uint8_t
 {
   TREE_D = 0, //default tree status (for single-tree slice, TREE_D means joint tree; for dual-tree I slice, TREE_D means TREE_L for luma and TREE_C for chroma)
   TREE_L = 1, //separate tree only contains luma (may split)
   TREE_C = 2, //separate tree only contains chroma (not split), to avoid small chroma block
 };
 
-enum ModeType
+enum ModeType : uint8_t
 {
   MODE_TYPE_ALL = 0, //all modes can try
   MODE_TYPE_INTER = 1, //can try inter
@@ -403,7 +403,7 @@ enum ModeType
 #define CH_L CHANNEL_TYPE_LUMA
 #define CH_C CHANNEL_TYPE_CHROMA
 
-enum ComponentID
+enum ComponentID : uint8_t
 {
   COMPONENT_Y         = 0,
   COMPONENT_Cb        = 1,
@@ -447,7 +447,7 @@ enum DeblockEdgeDir
 };
 
 /// supported prediction type
-enum PredMode
+enum PredMode : uint8_t
 {
   MODE_INTER                 = 0,     ///< inter-prediction mode
   MODE_INTRA                 = 1,     ///< intra-prediction mode
@@ -821,7 +821,7 @@ enum LumaLevelToDQPMode
 };
 #endif
 
-enum MergeType
+enum MergeType : uint8_t
 {
   MRG_TYPE_DEFAULT_N        = 0, // 0
   MRG_TYPE_SUBPU_ATMVP,
