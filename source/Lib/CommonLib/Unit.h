@@ -374,7 +374,7 @@ struct CodingUnit : public UnitArea
 
 struct IntraPredictionData
 {
-  uint8_t   intraDir[MAX_NUM_CHANNEL_TYPE];
+  IntraDir  intraDir[MAX_NUM_CHANNEL_TYPE];
   bool      mipTransposedFlag;
   int       multiRefIdx;
 };

@@ -685,7 +685,7 @@ bool PU::isDMChromaMIP(const PredictionUnit &pu)
   return !pu.cu->isSepTree() && (pu.chromaFormat == CHROMA_444) && getCoLocatedLumaPU(pu).cu->mipFlag;
 }
 
-uint8_t PU::getIntraDirLuma( const PredictionUnit &pu )
+IntraDir PU::getIntraDirLuma( const PredictionUnit &pu )
 {
   if (isMIP(pu))
   {
@@ -698,7 +698,7 @@ uint8_t PU::getIntraDirLuma( const PredictionUnit &pu )
 }
 
 
-void PU::getIntraChromaCandModes( const PredictionUnit &pu, unsigned modeList[NUM_CHROMA_MODE] )
+void PU::getIntraChromaCandModes( const PredictionUnit &pu, IntraDir modeList[NUM_CHROMA_MODE] )
 {
   modeList[0] = PLANAR_IDX;
   modeList[1] = VER_IDX;
@@ -715,7 +715,7 @@ void PU::getIntraChromaCandModes( const PredictionUnit &pu, unsigned modeList[NU
     return;
   }
 
-  const uint32_t lumaMode = getCoLocatedIntraLumaMode(pu);
+  const IntraDir lumaMode = getCoLocatedIntraLumaMode(pu);
   for (int i = 0; i < 4; i++)
   {
     if (lumaMode == modeList[i])
@@ -726,12 +726,12 @@ void PU::getIntraChromaCandModes( const PredictionUnit &pu, unsigned modeList[NU
   }
 }
 
-bool PU::isLMCMode(unsigned mode)
+bool PU::isLMCMode(IntraDir mode)
 {
   return (mode >= LM_CHROMA_IDX && mode <= MDLM_T_IDX);
 }
 
-bool PU::isLMCModeEnabled(const PredictionUnit &pu, unsigned mode)
+bool PU::isLMCModeEnabled(const PredictionUnit &pu, IntraDir mode)
 {
   if ( pu.cs->sps->getUseLMChroma() && pu.cu->checkCCLMAllowed() )
   {
@@ -755,9 +755,9 @@ bool PU::isChromaIntraModeCrossCheckMode( const PredictionUnit &pu )
   return !pu.cu->bdpcmModeChroma && pu.intraDir[CHANNEL_TYPE_CHROMA] == DM_CHROMA_IDX;
 }
 
-uint8_t PU::getFinalIntraMode( const PredictionUnit &pu, const ChannelType &chType )
+IntraDir PU::getFinalIntraMode( const PredictionUnit &pu, const ChannelType &chType )
 {
-  uint32_t uiIntraMode = pu.intraDir[chType];
+  IntraDir uiIntraMode = pu.intraDir[chType];
 
   if( uiIntraMode == DM_CHROMA_IDX && !isLuma( chType ) )
   {
@@ -781,7 +781,7 @@ const PredictionUnit &PU::getCoLocatedLumaPU(const PredictionUnit &pu)
   return lumaPU;
 }
 
-uint8_t PU::getCoLocatedIntraLumaMode(const PredictionUnit &pu)
+IntraDir PU::getCoLocatedIntraLumaMode(const PredictionUnit &pu)
 {
   return PU::getIntraDirLuma(PU::getCoLocatedLumaPU(pu));
 }

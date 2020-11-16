@@ -263,7 +263,7 @@ void IntraPrediction::predIntraAng( const ComponentID compId, PelBuf &piPred, co
   }
 }
 
-void IntraPrediction::predIntraChromaLM(const ComponentID compID, PelBuf &piPred, const PredictionUnit &pu, const CompArea &chromaArea, uint8_t intraDir)
+void IntraPrediction::predIntraChromaLM(const ComponentID compID, PelBuf &piPred, const PredictionUnit &pu, const CompArea &chromaArea, IntraDir intraDir)
 {
   int  iLumaStride = 0;
   PelBuf Temp;
@@ -1329,7 +1329,7 @@ void IntraPrediction::xGetLumaRecPixels(const PredictionUnit &pu, CompArea chrom
 {
   int iDstStride = 0;
   Pel* pDst0 = 0;
-  int curChromaMode = pu.intraDir[1];
+  IntraDir curChromaMode = pu.intraDir[1];
   if ((curChromaMode == MDLM_L_IDX) || (curChromaMode == MDLM_T_IDX))
   {
     iDstStride = 2 * MAX_CU_SIZE + 1;
@@ -1622,7 +1622,7 @@ void IntraPrediction::xGetLMParameters(const PredictionUnit &pu, const Component
   int avaiAboveUnits = 0;
   int avaiLeftUnits = 0;
 
-  int curChromaMode = pu.intraDir[1];
+  IntraDir curChromaMode = pu.intraDir[1];
   bool neighborFlags[4 * MAX_NUM_PART_IDXS_IN_CTU_WIDTH + 1];
   memset(neighborFlags, 0, totalUnits);
 
@@ -1829,7 +1829,7 @@ void IntraPrediction::predIntraMip( const ComponentID compId, PelBuf &piPred, co
   CHECK( piPred.width != (1 << floorLog2(piPred.width)) || piPred.height != (1 << floorLog2(piPred.height)), "Error: expecting blocks of size 2^M x 2^N" );
 
   // generate mode-specific prediction
-  uint32_t modeIdx       = MAX_NUM_MIP_MODE;
+  IntraDir modeIdx       = MAX_NUM_MIP_MODE;
   bool     transposeFlag = false;
   if (compId == COMPONENT_Y)
   {

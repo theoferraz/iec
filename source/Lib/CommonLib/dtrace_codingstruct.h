@@ -91,8 +91,8 @@ inline void dtraceModeCost(CodingStructure &cs, double lambda)
   }
 
   bool isIntra = CU::isIntra( *cs.cus.front() );
-  int intraModeL = isIntra ? cs.pus.front()->intraDir[0] : 0;
-  int intraModeC = isIntra ? cs.pus.front()->intraDir[1] : 0;
+  IntraDir intraModeL = isIntra ? cs.pus.front()->intraDir[0] : 0;
+  IntraDir intraModeC = isIntra ? cs.pus.front()->intraDir[1] : 0;
   if (isIntra && intraModeC == DM_CHROMA_IDX)
     intraModeC = 68;
   int imvVal = 0;
@@ -144,8 +144,8 @@ inline void dtraceBestMode(CodingStructure *&tempCS, CodingStructure *&bestCS, d
   }
 
   bool isIntra = CU::isIntra( *tempCS->cus[0] );
-  int intraModeL = isIntra ? tempCS->pus[0]->intraDir[0] : 0;
-  int intraModeC = isIntra ? tempCS->pus[0]->intraDir[1] : 0;
+  IntraDir intraModeL = isIntra ? tempCS->pus[0]->intraDir[0] : 0;
+  IntraDir intraModeC = isIntra ? tempCS->pus[0]->intraDir[1] : 0;
 
   if(!bSplitCS)
   {

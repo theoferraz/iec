@@ -1230,7 +1230,7 @@ void CABACWriter::intra_chroma_pred_modes( const CodingUnit& cu )
 }
 void CABACWriter::intra_chroma_lmc_mode(const PredictionUnit& pu)
 {
-  const unsigned intraDir = pu.intraDir[1];
+  const IntraDir intraDir = pu.intraDir[1];
   int lmModeList[10];
   PU::getLMSymbolList(pu, lmModeList);
   int symbol = -1;
@@ -1258,7 +1258,7 @@ void CABACWriter::intra_chroma_lmc_mode(const PredictionUnit& pu)
 void CABACWriter::intra_chroma_pred_mode(const PredictionUnit& pu)
 {
 
-  const unsigned intraDir = pu.intraDir[1];
+  const IntraDir intraDir = pu.intraDir[1];
   if (pu.cu->colorTransform)
   {
     CHECK(pu.intraDir[CHANNEL_TYPE_CHROMA] != DM_CHROMA_IDX, "chroma should use DM for adaptive color transform");
@@ -1282,7 +1282,7 @@ void CABACWriter::intra_chroma_pred_mode(const PredictionUnit& pu)
   }
 
   // chroma candidate index
-  unsigned chromaCandModes[NUM_CHROMA_MODE];
+  IntraDir chromaCandModes[NUM_CHROMA_MODE];
   PU::getIntraChromaCandModes(pu, chromaCandModes);
 
   int candId = 0;

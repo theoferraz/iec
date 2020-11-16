@@ -239,27 +239,27 @@ static const int MULTI_REF_LINE_IDX[4] =               { 0, 1, 2, 0 };
 
 static const int PRED_REG_MIN_WIDTH =                               4;  // Minimum prediction region width for ISP subblocks
 
-static const int NUM_LUMA_MODE =                                   67; ///< Planar + DC + 65 directional mode (4*16 + 1)
-static const int NUM_LMC_MODE =                                    1 + 2; ///< LMC + MDLM_T + MDLM_L
-static const int NUM_INTRA_MODE = (NUM_LUMA_MODE + NUM_LMC_MODE);
+static const IntraDir NUM_LUMA_MODE =                                   67; ///< Planar + DC + 65 directional mode (4*16 + 1)
+static const IntraDir NUM_LMC_MODE =                                    1 + 2; ///< LMC + MDLM_T + MDLM_L
+static const IntraDir NUM_INTRA_MODE = (NUM_LUMA_MODE + NUM_LMC_MODE);
 
-static const int NUM_EXT_LUMA_MODE =                               28;
+static const IntraDir NUM_EXT_LUMA_MODE =                               28;
 
-static const int NUM_DIR =           (((NUM_LUMA_MODE - 3) >> 2) + 1);
-static const int PLANAR_IDX =                                       0; ///< index for intra PLANAR mode
-static const int DC_IDX =                                           1; ///< index for intra DC     mode
-static const int HOR_IDX =                    (1 * (NUM_DIR - 1) + 2); ///< index for intra HORIZONTAL mode
-static const int DIA_IDX =                    (2 * (NUM_DIR - 1) + 2); ///< index for intra DIAGONAL   mode
-static const int VER_IDX =                    (3 * (NUM_DIR - 1) + 2); ///< index for intra VERTICAL   mode
-static const int VDIA_IDX =                   (4 * (NUM_DIR - 1) + 2); ///< index for intra VDIAGONAL  mode
-static const int BDPCM_IDX =                  (5 * (NUM_DIR - 1) + 2); ///< index for intra VDIAGONAL  mode
-static const int NOMODE_IDX =                               MAX_UCHAR; ///< indicating uninitialized elements
+static const IntraDir NUM_DIR =           (((NUM_LUMA_MODE - 3) >> 2) + 1);
+static const IntraDir PLANAR_IDX =                                       0; ///< index for intra PLANAR mode
+static const IntraDir DC_IDX =                                           1; ///< index for intra DC     mode
+static const IntraDir HOR_IDX =                    (1 * (NUM_DIR - 1) + 2); ///< index for intra HORIZONTAL mode
+static const IntraDir DIA_IDX =                    (2 * (NUM_DIR - 1) + 2); ///< index for intra DIAGONAL   mode
+static const IntraDir VER_IDX =                    (3 * (NUM_DIR - 1) + 2); ///< index for intra VERTICAL   mode
+static const IntraDir VDIA_IDX =                   (4 * (NUM_DIR - 1) + 2); ///< index for intra VDIAGONAL  mode
+static const IntraDir BDPCM_IDX =                  (5 * (NUM_DIR - 1) + 2); ///< index for intra VDIAGONAL  mode
+static const IntraDir NOMODE_IDX =                               MAX_UCHAR; ///< indicating uninitialized elements
 
-static const int NUM_CHROMA_MODE = (5 + NUM_LMC_MODE); ///< total number of chroma modes
-static const int LM_CHROMA_IDX = NUM_LUMA_MODE; ///< chroma mode index for derived from LM mode
-static const int MDLM_L_IDX =                          LM_CHROMA_IDX + 1; ///< MDLM_L
-static const int MDLM_T_IDX =                          LM_CHROMA_IDX + 2; ///< MDLM_T
-static const int DM_CHROMA_IDX =                       NUM_INTRA_MODE; ///< chroma mode index for derived from luma intra mode
+static const IntraDir NUM_CHROMA_MODE = (5 + NUM_LMC_MODE); ///< total number of chroma modes
+static const IntraDir LM_CHROMA_IDX = NUM_LUMA_MODE; ///< chroma mode index for derived from LM mode
+static const IntraDir MDLM_L_IDX =                          LM_CHROMA_IDX + 1; ///< MDLM_L
+static const IntraDir MDLM_T_IDX =                          LM_CHROMA_IDX + 2; ///< MDLM_T
+static const IntraDir DM_CHROMA_IDX =                       NUM_INTRA_MODE; ///< chroma mode index for derived from luma intra mode
 
 static const uint32_t  NUM_TRAFO_MODES_MTS =                            6; ///< Max Intra CU size applying EMT, supported values: 8, 16, 32, 64, 128
 static const uint32_t  MTS_INTRA_MAX_CU_SIZE =                         32; ///< Max Intra CU size applying EMT, supported values: 8, 16, 32, 64, 128

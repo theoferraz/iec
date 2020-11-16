@@ -217,10 +217,10 @@ private:
     bool     mipTrFlg; // PU::mipTransposedFlag
     int      mRefId; // PU::multiRefIdx
     uint8_t  ispMod; // CU::ispMode
-    uint32_t modeId; // PU::intraDir[CHANNEL_TYPE_LUMA]
+    IntraDir modeId; // PU::intraDir[CHANNEL_TYPE_LUMA]
 
     ModeInfo() : mipFlg(false), mipTrFlg(false), mRefId(0), ispMod(NOT_INTRA_SUBPARTITIONS), modeId(0) {}
-    ModeInfo(const bool mipf, const bool miptf, const int mrid, const uint8_t ispm, const uint32_t mode) : mipFlg(mipf), mipTrFlg(miptf), mRefId(mrid), ispMod(ispm), modeId(mode) {}
+    ModeInfo(const bool mipf, const bool miptf, const int mrid, const uint8_t ispm, const IntraDir mode) : mipFlg(mipf), mipTrFlg(miptf), mRefId(mrid), ispMod(ispm), modeId(mode) {}
     bool operator==(const ModeInfo cmp) const { return (mipFlg == cmp.mipFlg && mipTrFlg == cmp.mipTrFlg && mRefId == cmp.mRefId && ispMod == cmp.ispMod && modeId == cmp.modeId); }
   };
   struct ModeInfoWithCost : public ModeInfo

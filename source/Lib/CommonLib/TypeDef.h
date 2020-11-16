@@ -280,6 +280,8 @@ typedef       uint64_t          ModeTypeSeries;    ///< used to encoded the Mode
 
 typedef       uint64_t        Distortion;        ///< distortion measurement
 
+typedef       uint8_t           IntraDir;          ///< intra prediction direction (or mode)
+
 // ====================================================================================================================
 // Enumeration
 // ====================================================================================================================

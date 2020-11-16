@@ -496,7 +496,7 @@ const int g_invQuantScales[2][SCALING_LIST_REM_NUM] = // can be represented as a
 // Intra prediction
 // ====================================================================================================================
 
-const uint8_t g_aucIntraModeNumFast_UseMPM_2D[7 - MIN_CU_LOG2 + 1][7 - MIN_CU_LOG2 + 1] =
+const IntraDir g_aucIntraModeNumFast_UseMPM_2D[7 - MIN_CU_LOG2 + 1][7 - MIN_CU_LOG2 + 1] =
 {
   {3, 3, 3, 3, 2, 2},  //   4x4,   4x8,   4x16,   4x32,   4x64,   4x128,
   {3, 3, 3, 3, 3, 2},  //   8x4,   8x8,   8x16,   8x32,   8x64,   8x128,
@@ -506,7 +506,7 @@ const uint8_t g_aucIntraModeNumFast_UseMPM_2D[7 - MIN_CU_LOG2 + 1][7 - MIN_CU_LO
   {2, 2, 2, 2, 2, 3},  // 128x4, 128x8, 128x16, 128x32, 128x64, 128x128,
 };
 
-const uint8_t g_aucIntraModeNumFast_UseMPM[MAX_CU_DEPTH] =
+const IntraDir g_aucIntraModeNumFast_UseMPM[MAX_CU_DEPTH] =
 {
   3,  //   2x2
   8,  //   4x4
@@ -516,7 +516,7 @@ const uint8_t g_aucIntraModeNumFast_UseMPM[MAX_CU_DEPTH] =
   3,  //  64x64
   3   // 128x128
 };
-const uint8_t g_aucIntraModeNumFast_NotUseMPM[MAX_CU_DEPTH] =
+const IntraDir g_aucIntraModeNumFast_NotUseMPM[MAX_CU_DEPTH] =
 {
   3,  //   2x2
   9,  //   4x4
@@ -527,7 +527,7 @@ const uint8_t g_aucIntraModeNumFast_NotUseMPM[MAX_CU_DEPTH] =
   5   // 128x128
 };
 
-const uint8_t g_chroma422IntraAngleMappingTable[NUM_INTRA_MODE] =
+const IntraDir g_chroma422IntraAngleMappingTable[NUM_INTRA_MODE] =
 //                                    *                                H                              *                                D      *   *   *   *       *   *   *                   *        V       *                   *   *   *      *   *   *   *
 //0, 1,  2,  3,  4,  5,  6,  7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, DM
 { 0, 1, 61, 62, 63, 64, 65, 66, 2, 3,  5,  6,  8, 10, 12, 13, 14, 16, 18, 20, 22, 23, 24, 26, 28, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 41, 42, 43, 43, 44, 44, 45, 45, 46, 47, 48, 48, 49, 49, 50, 51, 51, 52, 52, 53, 54, 55, 55, 56, 56, 57, 57, 58, 59, 59, 60, DM_CHROMA_IDX };

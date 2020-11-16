@@ -131,7 +131,7 @@ namespace PU
   bool          isMIP                 (const PredictionUnit &pu, const ChannelType &chType = CHANNEL_TYPE_LUMA);
   bool          isDMChromaMIP         (const PredictionUnit &pu);
   uint8_t       getIntraDirLuma       (const PredictionUnit &pu);
-  void getIntraChromaCandModes        (const PredictionUnit &pu, unsigned modeList[NUM_CHROMA_MODE]);
+  void getIntraChromaCandModes        (const PredictionUnit &pu, IntraDir modeList[NUM_CHROMA_MODE]);
   const PredictionUnit &getCoLocatedLumaPU(const PredictionUnit &pu);
   uint8_t getFinalIntraMode               (const PredictionUnit &pu, const ChannelType &chType);
   uint8_t getCoLocatedIntraLumaMode       (const PredictionUnit &pu);
@@ -168,8 +168,8 @@ namespace PU
   bool isBiPredFromDifferentDirEqDistPoc(const PredictionUnit &pu);
   void restrictBiPredMergeCandsOne    (PredictionUnit &pu);
 
-  bool isLMCMode                      (                          unsigned mode);
-  bool isLMCModeEnabled               (const PredictionUnit &pu, unsigned mode);
+  bool isLMCMode                      (                          IntraDir mode);
+  bool isLMCModeEnabled               (const PredictionUnit &pu, IntraDir mode);
   bool isChromaIntraModeCrossCheckMode(const PredictionUnit &pu);
   void getGeoMergeCandidates          (const PredictionUnit &pu, MergeCtx &GeoMrgCtx);
   void spanGeoMotionInfo              (      PredictionUnit &pu, MergeCtx &GeoMrgCtx, const uint8_t splitDir, const uint8_t candIdx0, const uint8_t candIdx1);

@@ -1511,7 +1511,7 @@ void CABACReader::intra_chroma_pred_mode(PredictionUnit& pu)
 
   unsigned candId = m_BinDecoder.decodeBinsEP(2);
 
-  unsigned chromaCandModes[NUM_CHROMA_MODE];
+  IntraDir chromaCandModes[NUM_CHROMA_MODE];
   PU::getIntraChromaCandModes(pu, chromaCandModes);
 
   CHECK(candId >= NUM_CHROMA_MODE, "Chroma prediction mode index out of bounds");

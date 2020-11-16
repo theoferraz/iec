@@ -552,9 +552,9 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
 
           if (!LFNSTLoadFlag)
           {
-            for (int modeIdx = 0; modeIdx < numModesAvailable; modeIdx++)
+            for (IntraDir modeIdx = 0; modeIdx < numModesAvailable; modeIdx++)
             {
-              uint32_t   uiMode    = modeIdx;
+              IntraDir   uiMode    = modeIdx;
               Distortion minSadHad = 0;
 
               // Skip checking extended Angular modes in the first round of SATD
@@ -619,14 +619,14 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
             static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> parentCandList = uiRdModeList;
 
             // Second round of SATD for extended Angular modes
-            for (int modeIdx = 0; modeIdx < numModesForFullRD; modeIdx++)
+            for (IntraDir modeIdx = 0; modeIdx < numModesForFullRD; modeIdx++)
             {
-              unsigned parentMode = parentCandList[modeIdx].modeId;
+              IntraDir parentMode = parentCandList[modeIdx].modeId;
               if (parentMode > (DC_IDX + 1) && parentMode < (NUM_LUMA_MODE - 1))
               {
                 for (int subModeIdx = -1; subModeIdx <= 1; subModeIdx += 2)
                 {
-                  unsigned mode = parentMode + subModeIdx;
+                  IntraDir mode = parentMode + subModeIdx;
 
                   if (!bSatdChecked[mode])
                   {
@@ -761,7 +761,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
               for (uint32_t uiModeFull = 0; uiModeFull < numModesFull; uiModeFull++)
               {
                 const bool     isTransposed = (uiModeFull >= transpOff ? true : false);
-                const uint32_t uiMode       = (isTransposed ? uiModeFull - transpOff : uiModeFull);
+                const IntraDir uiMode       = (isTransposed ? uiModeFull - transpOff : uiModeFull);
 
                 pu.mipTransposedFlag           = isTransposed;
                 pu.intraDir[CHANNEL_TYPE_LUMA] = uiMode;
@@ -1237,7 +1237,7 @@ void IntraSearch::estIntraPredChromaQT( CodingUnit &cu, Partitioner &partitioner
   auto &pu = *cu.firstPU;
 
   {
-    uint32_t       uiBestMode = 0;
+    IntraDir   uiBestMode = 0;
     Distortion uiBestDist = 0;
     double     dBestCost = MAX_DOUBLE;
     int32_t bestBDPCMMode = 0;
@@ -1247,7 +1247,7 @@ void IntraSearch::estIntraPredChromaQT( CodingUnit &cu, Partitioner &partitioner
       int32_t  uiMinMode = 0;
       int32_t  uiMaxMode = NUM_CHROMA_MODE;
       //----- check chroma modes -----
-      uint32_t chromaCandModes[ NUM_CHROMA_MODE ];
+      IntraDir chromaCandModes[ NUM_CHROMA_MODE ];
       PU::getIntraChromaCandModes( pu, chromaCandModes );
 
       // create a temporary CS
@@ -1328,7 +1328,7 @@ void IntraSearch::estIntraPredChromaQT( CodingUnit &cu, Partitioner &partitioner
 
       for (int idx = uiMinMode; idx <= uiMaxMode - 1; idx++)
       {
-        int mode = chromaCandModes[idx];
+        IntraDir mode = chromaCandModes[idx];
         satdModeList[idx] = mode;
         if (PU::isLMCMode(mode) && !PU::isLMCModeEnabled(pu, mode))
         {
@@ -1419,7 +1419,7 @@ void IntraSearch::estIntraPredChromaQT( CodingUnit &cu, Partitioner &partitioner
       testBDPCM = testBDPCM && CU::bdpcmAllowed(cu, COMPONENT_Cb) && cu.ispMode == 0 && cu.mtsFlag == 0 && cu.lfnstIdx == 0;
       for (int32_t uiMode = uiMinMode - (2 * int(testBDPCM)); uiMode < uiMaxMode; uiMode++)
       {
-        int chromaIntraMode;
+        IntraDir chromaIntraMode;
 
         if (uiMode < 0)
         {
@@ -3826,7 +3826,7 @@ bool IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
             const ChannelType     chType      = toChannelType( COMPONENT_Y );
             const CompArea&       area        = tu.blocks[ COMPONENT_Y ];
             const PredictionUnit& pu          = *cs.getPU( area.pos(), chType );
-            uint32_t              uiIntraMode = pu.intraDir[ chType ];
+            IntraDir              uiIntraMode = pu.intraDir[ chType ];
 
             if( transformIndex == 1 )
             {
@@ -4358,7 +4358,7 @@ bool IntraSearch::xRecurIntraCodingACTQT(CodingStructure &cs, Partitioner &parti
         {
           if (moreProbMTSIdxFirst)
           {
-            uint32_t uiIntraMode = pu.intraDir[CHANNEL_TYPE_LUMA];
+            IntraDir uiIntraMode = pu.intraDir[CHANNEL_TYPE_LUMA];
 
             if (transformIndex == 1)
             {
@@ -5440,7 +5440,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
 
 uint64_t IntraSearch::xFracModeBitsIntra(PredictionUnit &pu, const uint32_t &uiMode, const ChannelType &chType)
 {
-  uint8_t orgMode = uiMode;
+  IntraDir orgMode = uiMode;
 
   if (!pu.ciipFlag)
   std::swap(orgMode, pu.intraDir[chType]);
