@@ -1692,7 +1692,7 @@ bool EncCu::xCheckRDCostIntra(CodingStructure *&tempCS, CodingStructure *&bestCS
               m_modeCtrl->setISPMode(cu.ispMode);
               m_modeCtrl->setISPLfnstIdx(cu.lfnstIdx);
               m_modeCtrl->setMIPFlagISPPass(cu.mipFlag);
-              m_modeCtrl->setBestISPIntraModeRelCU(cu.ispMode ? PU::getFinalIntraMode(*cu.firstPU, CHANNEL_TYPE_LUMA) : UINT8_MAX);
+              m_modeCtrl->setBestISPIntraModeRelCU(cu.ispMode ? PU::getFinalIntraMode(*cu.firstPU, CHANNEL_TYPE_LUMA) : NOMODE_IDX);
               m_modeCtrl->setBestDCT2NonISPCostRelCU(m_modeCtrl->getMtsFirstPassNoIspCost());
             }
 

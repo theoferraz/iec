@@ -372,7 +372,7 @@ enum SliceType
 };
 
 /// chroma formats (according to how the monochrome or the color planes are intended to be coded)
-enum ChromaFormat /* : uint8_t */ // uint8 --> crash in simdInterpolateLuma10Bit2P16 (AVX2)
+enum ChromaFormat
 {
   CHROMA_400        = 0,
   CHROMA_420        = 1,

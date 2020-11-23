@@ -565,7 +565,7 @@ int PU::getIntraMPMs( const PredictionUnit &pu, unsigned* mpm, const ChannelType
   {
     CHECK(channelType != CHANNEL_TYPE_LUMA, "Not harmonized yet");
     int numCand      = -1;
-    int leftIntraDir = PLANAR_IDX, aboveIntraDir = PLANAR_IDX;
+    IntraDir leftIntraDir = PLANAR_IDX, aboveIntraDir = PLANAR_IDX;
 
     const CompArea &area = pu.block(getFirstComponentOfChannel(channelType));
     const Position posRT = area.topRight();

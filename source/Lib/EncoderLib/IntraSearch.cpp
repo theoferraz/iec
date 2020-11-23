@@ -619,7 +619,7 @@ bool IntraSearch::estIntraPredLumaQT(CodingUnit &cu, Partitioner &partitioner, c
             static_vector<ModeInfo, FAST_UDI_MAX_RDMODE_NUM> parentCandList = uiRdModeList;
 
             // Second round of SATD for extended Angular modes
-            for (IntraDir modeIdx = 0; modeIdx < numModesForFullRD; modeIdx++)
+            for (int modeIdx = 0; modeIdx < numModesForFullRD; modeIdx++)
             {
               IntraDir parentMode = parentCandList[modeIdx].modeId;
               if (parentMode > (DC_IDX + 1) && parentMode < (NUM_LUMA_MODE - 1))
@@ -3042,7 +3042,7 @@ void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
   PelBuf         piReco                     = cs.getRecoBuf   (area);
 
   const PredictionUnit &pu                  = *cs.getPU(area.pos(), chType);
-  const uint32_t           uiChFinalMode        = PU::getFinalIntraMode(pu, chType);
+  const IntraDir       uiChFinalMode        = PU::getFinalIntraMode(pu, chType);
 
   //===== init availability pattern =====
   CHECK( tu.jointCbCr && compID == COMPONENT_Cr, "wrong combination of compID and jointCbCr" );
@@ -4988,7 +4988,7 @@ ChromaCbfs IntraSearch::xRecurIntraChromaCodingQT( CodingStructure &cs, Partitio
     currTU.jointCbCr = 0;
 
     // Do predictions here to avoid repeating the "default0Save1Load2" stuff
-    int  predMode   = pu.cu->bdpcmModeChroma ? BDPCM_IDX : PU::getFinalIntraMode(pu, CHANNEL_TYPE_CHROMA);
+    IntraDir predMode = pu.cu->bdpcmModeChroma ? BDPCM_IDX : PU::getFinalIntraMode(pu, CHANNEL_TYPE_CHROMA);
 
     PelBuf piPredCb = cs.getPredBuf(cbArea);
     PelBuf piPredCr = cs.getPredBuf(crArea);

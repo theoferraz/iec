@@ -184,7 +184,7 @@ void DecCu::xIntraRecBlk( TransformUnit& tu, const ComponentID compID )
         PelBuf piPred       = cs.getPredBuf( area );
 
   const PredictionUnit &pu  = *tu.cs->getPU( area.pos(), chType );
-  const uint32_t uiChFinalMode  = PU::getFinalIntraMode( pu, chType );
+  const IntraDir uiChFinalMode = PU::getFinalIntraMode( pu, chType );
   PelBuf pReco              = cs.getRecoBuf(area);
 
   //===== init availability pattern =====

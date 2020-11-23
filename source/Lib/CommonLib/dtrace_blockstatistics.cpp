@@ -894,13 +894,13 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
               {
                 if( isLuma( ChannelType( chType ) ) )
                 {
-                  const uint32_t uiChFinalMode  = PU::getFinalIntraMode( pu, ChannelType( chType ) );
+                  const IntraDir uiChFinalMode  = PU::getFinalIntraMode( pu, ChannelType( chType ) );
                   DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::Luma_IntraMode), uiChFinalMode);
                   DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::MultiRefIdx), pu.multiRefIdx);
                 }
                 else
                 {
-                  const uint32_t uiChFinalMode  = PU::getFinalIntraMode( pu, ChannelType( chType ) );
+                  const IntraDir uiChFinalMode  = PU::getFinalIntraMode( pu, ChannelType( chType ) );
                   DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, pu, GetBlockStatisticName(BlockStatistic::Chroma_IntraMode), uiChFinalMode);
                     assert(0);
                 }
