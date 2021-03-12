@@ -624,16 +624,18 @@ namespace df
         string arg;
         list<std::string> ls;
         vector<const char*> argv;
+        unsigned argc = 1;
         argv.push_back(0);  // first dummy element (scanArgv starts parsing at index 1)
         while (ss >> arg)
         {
           ls.push_back(arg);
           argv.push_back(ls.back().c_str());
+          argc++;
         }
         argv.push_back(0);  // terminating null pointer
 
         // parse cmdline
-        scanArgv(opts, argv.size()-1, &argv[0], error_reporter);
+        scanArgv(opts, argc, &argv[0], error_reporter);
 
         return true; // unless parse fails ?
       }
