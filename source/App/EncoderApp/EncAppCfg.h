@@ -851,6 +851,8 @@ protected:
   bool                  m_gopBasedTemporalFilterFutureReference;       ///< Enable/disable future frame references in the GOP-based Temporal Filter
   std::map<int, double> m_gopBasedTemporalFilterStrengths;             ///< Filter strength per frame for the GOP-based Temporal Filter
 
+  std::string m_configUpdateFileName;                         ///< filename for dynamic config update
+
   int         m_maxLayers;
   int         m_targetOlsIdx;
   bool        m_OPIEnabled;                                     ///< enable Operating Point Information (OPI)
@@ -900,6 +902,7 @@ protected:
   int         m_cropOffsetBottom;
   bool        m_calculateHdrMetrics;
 #endif
+  po::OptionUpdater *m_optionUpdater;
 
   // internal member functions
   bool  xCheckParameter ();                                   ///< check validity of configuration values
@@ -908,6 +911,10 @@ protected:
   bool  xHasNonZeroTemporalID();                             ///< check presence of constant temporal ID in GOP structure
   bool  xHasLeadingPicture();                                 ///< check presence of leading pictures in GOP structure
   int   xAutoDetermineProfile();                              ///< auto determine the profile to use given the other configuration settings. Returns 1 if erred. Can select profile 'NONE'
+
+  void xOpenOptionUpdater();
+  bool xGetUpdate(int id, EncCfgUpdate& cfgUpdate);
+
 public:
   EncAppCfg();
   virtual ~EncAppCfg();

@@ -126,6 +126,8 @@ public:
   VPS * getVPS() { return m_cEncLib.getVPS(); }
   int   getChromaFormatIDC() const { return m_cEncLib.getChromaFormatIdc(); }
   int   getBitDepth() const { return m_cEncLib.getBitDepth(CHANNEL_TYPE_LUMA); }
+
+  static bool getConfigUdpate(void* handle, int id, EncCfgUpdate& cfgUpdate);
 };// END CLASS DEFINITION EncApp
 
 //! \}

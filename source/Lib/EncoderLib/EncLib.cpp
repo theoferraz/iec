@@ -151,6 +151,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   SPS &sps0 = *(m_spsMap.allocatePS( m_vps->getGeneralLayerIdx( m_layerId ) )); // NOTE: implementations that use more than 1 SPS need to be aware of activation issues.
   PPS &pps0 = *( m_ppsMap.allocatePS( m_vps->getGeneralLayerIdx( m_layerId ) ) );
   APS &aps0 = *( m_apsMap.allocatePS( SCALING_LIST_APS ) );
+  m_scalingListApsId = 0;
   aps0.setAPSId( 0 );
   aps0.setAPSType( SCALING_LIST_APS );
 
@@ -2312,5 +2313,70 @@ int EncCfg::getQPForPicture(const uint32_t gopIndex, const Slice *pSlice) const
 }
 #endif
 
+//// config update -----------------
+
+void EncCfg::setUpdateCallback(EncCfgUpdateFn* fn, void* handle)
+{
+  m_cfgUpdateFn = fn;
+  m_cfgUpdateHandle = handle;
+}
+
+bool EncCfg::getConfigUpdate(int poc)
+{
+  bool updated = false;
+
+  // call the update callback
+  if (m_cfgUpdateFn)
+  {
+    m_cfgUpdate.reset();
+    updated = (*m_cfgUpdateFn)(m_cfgUpdateHandle, poc, m_cfgUpdate);
+  }
+  return updated;
+}
+
+//! Get configuration update (fills m_cfgUpdate)
+bool EncCfg::updateConfig()
+{
+  // sync internals with m_cfgUpdate: copy each updated field
+  if (m_cfgUpdate.m_useScalingListId >= 0)          m_useScalingListId = (ScalingListMode)m_cfgUpdate.m_useScalingListId;
+  if (m_cfgUpdate.m_scalingListApsId >= 0)          m_scalingListApsId = m_cfgUpdate.m_scalingListApsId;
+  if (!m_cfgUpdate.m_scalingListFileName.empty())   m_scalingListFileName = m_cfgUpdate.m_scalingListFileName;
+  if (m_cfgUpdate.m_cuChromaQpOffsetSubdiv >= 0)    m_cuChromaQpOffsetSubdiv = m_cfgUpdate.m_cuChromaQpOffsetSubdiv;
+  if (m_cfgUpdate.m_cuChromaQpOffsetEnabled >= 0)   m_cuChromaQpOffsetEnabled = m_cfgUpdate.m_cuChromaQpOffsetEnabled > 0;
+
+  return true;
+}
+
+//! Update internals from m_cfgUpdate
+bool EncLib::updateConfig(int poc)
+{
+  bool updated;
+  updated = getConfigUpdate(poc);
+  if (updated)
+  {
+    // m_cfgUpdate has been updated; we get a chance to compare with old values and take action accordingly
+    EncCfg::updateConfig();
+    // then here we can do more, e.g. specific to EncLib
+
+    // Update scaling matrices
+    if (m_cfgUpdate.m_useScalingListId >= 0 || m_cfgUpdate.m_scalingListApsId >= 0 || !m_cfgUpdate.m_scalingListFileName.empty())
+    {
+      SPS *sps = m_spsMap.getFirstPS(); // TODO: improve this
+      APS* aps = m_apsMap.allocatePS((m_scalingListApsId << NUM_APS_TYPE_LEN) + SCALING_LIST_APS);
+      xInitScalingLists(*sps, *aps);
+      aps->setAPSId(m_scalingListApsId);
+      aps->setAPSType(SCALING_LIST_APS);
+      if (!m_cfgUpdate.m_scalingListFileName.empty()) // avoid re-sending APS if no new content is specified
+      {
+        m_apsMap.setChangedFlag((m_scalingListApsId << NUM_APS_TYPE_LEN) + SCALING_LIST_APS);
+      }
+    }
+
+    // update stuff in pic header (better do it inside EncGop ?)
+    m_picHeader.setCuChromaQpOffsetSubdivIntra(m_cuChromaQpOffsetSubdiv);
+    m_picHeader.setCuChromaQpOffsetSubdivInter(m_cuChromaQpOffsetSubdiv);
+  }
+  return updated;
+}
 
 //! \}

@@ -31,12 +31,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <stdlib.h>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <list>
-#include <map>
+#include <vector>
 #include <algorithm>
 #include "program_options_lite.h"
 
@@ -478,27 +473,27 @@ namespace df
         return os.str();
       }
 
-      void scanLine(string& line);
+      bool scanLine(string& line, string& option, string& value);
       void scanStream(istream& in);
     };
 
-    void CfgStreamParser::scanLine(string& line)
+    bool CfgStreamParser::scanLine(string& line, string& option, string& value)
     {
       /* strip any leading whitespace */
       size_t start = line.find_first_not_of(" \t\n\r");
       if (start == string::npos)
       {
         /* blank line */
-        return;
+        return false;
       }
       if (line[start] == '#')
       {
         /* comment line */
-        return;
+        return false;
       }
       /* look for first whitespace or ':' after the option end */
       size_t option_end = line.find_first_of(": \t\n\r",start);
-      string option = line.substr(start, option_end - start);
+      option            = line.substr(start, option_end - start);
 
       /* look for ':', eat up any whitespace first */
       start = line.find_first_not_of(" \t\n\r", option_end);
@@ -506,13 +501,13 @@ namespace df
       {
         /* error: badly formatted line */
         error_reporter.warn(where()) << "line formatting error\n";
-        return;
+        return false;
       }
       if (line[start] != ':')
       {
         /* error: badly formatted line */
         error_reporter.warn(where()) << "line formatting error\n";
-        return;
+        return false;
       }
 
       /* look for start of value string -- eat up any leading whitespace */
@@ -521,7 +516,7 @@ namespace df
       {
         /* error: badly formatted line */
         error_reporter.warn(where()) << "line formatting error\n";
-        return;
+        return false;
       }
 
       /* extract the value part, which may contain embedded spaces
@@ -543,7 +538,6 @@ namespace df
       /* strip any trailing space from value*/
       value_end = line.find_last_not_of(" \t\n\r", value_end);
 
-      string value;
       if (value_end >= start)
       {
         value = line.substr(start, value_end +1 - start);
@@ -552,11 +546,10 @@ namespace df
       {
         /* error: no value */
         error_reporter.warn(where()) << "no value found\n";
-        return;
+        return false;
       }
 
-      /* store the value in option */
-      storePair(true, false, option, value);
+      return true;
     }
 
     void CfgStreamParser::scanStream(istream& in)
@@ -566,7 +559,12 @@ namespace df
         linenum++;
         string line;
         getline(in, line);
-        scanLine(line);
+        string option, value;
+        if (scanLine(line, option, value))
+        {
+          /* store the value in option */
+          storePair(true, false, option, value);
+        }
       } while(!!in);
     }
 
@@ -592,6 +590,67 @@ namespace df
       csp.scanStream(cfgstream);
     }
 
+// ---------- configuration update
+
+    bool OptionUpdater::update(Options& opts, unsigned int target_id, ErrorReporter& error_reporter)
+    {
+      CfgStreamParser csp(name, opts, error_reporter);
+
+      while (cmdstack.lower_bound(target_id) == cmdstack.end()) // store all until finding id >= target_id
+      {
+        // read file
+        csp.linenum = ++linenum;
+        string line;
+        getline(in, line);
+        if (!in)
+          return false;
+        string id_str, cmdline;
+        if (csp.scanLine(line, id_str, cmdline))
+        {
+          /* convert id_str to id_num */
+          int id = stoi(id_str);
+          // TODO: deal with stoi() failure ?
+          // store in cmdstack
+          cmdstack[id] = cmdline;
+        }
+      }
+      auto found = cmdstack.find(target_id);
+      if (found != cmdstack.end())
+      {
+        // generate argc/argv for use by scanArgv
+        string cmdline = found->second;
+        cmdstack.erase(found);
+        istringstream ss(cmdline);
+        string arg;
+        list<std::string> ls;
+        vector<const char*> argv;
+        argv.push_back(0);  // first dummy element (scanArgv starts parsing at index 1)
+        while (ss >> arg)
+        {
+          ls.push_back(arg);
+          argv.push_back(ls.back().c_str());
+        }
+        argv.push_back(0);  // terminating null pointer
+
+        // parse cmdline
+        scanArgv(opts, argv.size()-1, &argv[0], error_reporter);
+
+        return true; // unless parse fails ?
+      }
+      return false;
+    }
+
+    bool OptionUpdater::openFile(const string& rName, ErrorReporter& error_reporter)
+    {
+      name = rName;
+      in.open(rName.c_str());
+      if (!in)
+      {
+        error_reporter.error(name) << "Failed to open update file\n";
+        return false;
+      }
+      return true;
+    }
   }
 }
 

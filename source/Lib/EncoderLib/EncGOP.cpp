@@ -2331,6 +2331,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
     accessUnit.temporalId = m_pcCfg->getGOPEntry( iGOPid ).m_temporalId;
     xGetBuffer( rcListPic, rcListPicYuvRecOut,
                 iNumPicRcvd, iTimeOffset, pcPic, pocCurr, isField );
+    xUpdateConfig(pocCurr, pcPic);
     picHeader = pcPic->cs->picHeader;
     picHeader->setSPSId( pcPic->cs->pps->getSPSId() );
 #if JVET_X0101_ADD_WRAPAROUND_CONSTRAINT
@@ -6678,5 +6679,21 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
     }
   }
 
+}
+
+bool EncGOP::xUpdateConfig(int poc, Picture* pcPic)
+{
+  bool updated = m_pcEncLib->updateConfig(poc);
+  if (!m_pcEncLib->getUpdateStruct().m_scalingListFileName.empty())
+  {
+    APS* aps = m_pcEncLib->getApsMap()->getPS((m_pcEncLib->getScalingListApsId() << NUM_APS_TYPE_LEN) + SCALING_LIST_APS);
+    assert(aps != NULL);
+    aps->setTemporalId(pcPic->temporalId);
+  }
+  //if (m_pcEncLib->getUpdateStruct().m_cuChromaQpOffsetSubdiv >= 0)
+  //{
+  //  // could update pic header stuff here instead of EncLib::updateConfig()
+  //}
+  return updated;
 }
 //! \}

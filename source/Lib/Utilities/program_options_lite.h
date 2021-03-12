@@ -31,6 +31,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <list>
@@ -335,6 +336,18 @@ namespace df
       Options& parent;
     };
 
+    struct OptionUpdater
+    {
+      OptionUpdater() : linenum(0) { }
+      ~OptionUpdater() { }
+
+      bool openFile(const std::string& rName, ErrorReporter& error_reporter);
+      bool update(Options& opts, unsigned int target_id, ErrorReporter& error_reporter);
+      int linenum;
+      std::string name;
+      std::ifstream in;
+      std::map<int,std::string> cmdstack;
+    };
   } /* namespace: program_options_lite */
 } /* namespace: df */
 
