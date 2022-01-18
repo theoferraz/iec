@@ -2371,10 +2371,6 @@ bool EncLib::updateConfig(int poc)
         m_apsMap.setChangedFlag((m_scalingListApsId << NUM_APS_TYPE_LEN) + SCALING_LIST_APS);
       }
     }
-
-    // update stuff in pic header (better do it inside EncGop ?)
-    m_picHeader.setCuChromaQpOffsetSubdivIntra(m_cuChromaQpOffsetSubdiv);
-    m_picHeader.setCuChromaQpOffsetSubdivInter(m_cuChromaQpOffsetSubdiv);
   }
   return updated;
 }

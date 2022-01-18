@@ -6690,10 +6690,11 @@ bool EncGOP::xUpdateConfig(int poc, Picture* pcPic)
     assert(aps != NULL);
     aps->setTemporalId(pcPic->temporalId);
   }
-  //if (m_pcEncLib->getUpdateStruct().m_cuChromaQpOffsetSubdiv >= 0)
-  //{
-  //  // could update pic header stuff here instead of EncLib::updateConfig()
-  //}
+
+  // xInitPicHeader called early (before I picture, for whole GOP). Could call it again here, or just update changed parameters
+  pcPic->cs->picHeader->setCuChromaQpOffsetSubdivIntra(m_pcEncLib->getCuChromaQpOffsetSubdiv());
+  pcPic->cs->picHeader->setCuChromaQpOffsetSubdivInter(m_pcEncLib->getCuChromaQpOffsetSubdiv());
+
   return updated;
 }
 //! \}
