@@ -1260,6 +1260,12 @@ void EncApp::xInitLibCfg()
   m_cEncLib.setNumRefLayers                                       ( m_numRefLayers );
 
   m_cEncLib.setVPSParameters(m_cfgVPSParameters);
+
+  if (!m_configUpdateFileName.empty())
+  {
+    xOpenOptionUpdater();
+    m_cEncLib.setUpdateCallback(&EncApp::getConfigUdpate, (void*)this);
+  }
 }
 
 void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )
@@ -1711,6 +1717,18 @@ void EncApp::printChromaFormat()
     }
     std::cout << "\n" << std::endl;
   }
+}
+
+///------------------
+
+bool EncApp::getConfigUdpate(void* handle, int id, EncCfgUpdate& cfgUpdate) // static func = THE callback
+{
+  bool updated = false;
+  if (handle)
+  {
+    updated = ((EncApp*)handle)->xGetUpdate(id, cfgUpdate);
+  }
+  return updated;
 }
 
 //! \}

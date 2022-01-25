@@ -251,6 +251,8 @@ public:
 
   int getLayerId() const { return m_layerId; }
   VPS* getVPS()          { return m_vps;     }
+
+  bool updateConfig(int poc);
 };
 
 //! \}

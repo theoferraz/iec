@@ -145,6 +145,26 @@ struct RPLEntry
 
 std::istringstream &operator>>(std::istringstream &in, GOPEntry &entry);     //input
 
+struct EncCfgUpdate
+{
+  int m_useScalingListId;
+  int m_scalingListApsId;
+  std::string m_scalingListFileName;
+  int m_cuChromaQpOffsetSubdiv;
+  int m_cuChromaQpOffsetEnabled;
+
+  EncCfgUpdate() { reset(); }
+  void reset()
+  {
+    m_useScalingListId = -1;
+    m_scalingListApsId = -1;
+    m_scalingListFileName = "";
+    m_cuChromaQpOffsetSubdiv = -1;
+    m_cuChromaQpOffsetEnabled = -1;
+  }
+};
+
+typedef bool (EncCfgUpdateFn)(void* handle, int id, EncCfgUpdate& upd);
 
 //! \ingroup EncoderLib
 //! \{
@@ -903,8 +923,13 @@ protected:
   bool        m_craAPSreset;
   bool        m_rprRASLtoolSwitch;
 
+  int             m_scalingListApsId;
+  EncCfgUpdate    m_cfgUpdate;
+  EncCfgUpdateFn *m_cfgUpdateFn;
+  void           *m_cfgUpdateHandle;
+
 public:
-  EncCfg()
+  EncCfg(): m_cfgUpdateFn(NULL)
   {
   }
 
@@ -2375,6 +2400,12 @@ public:
 
   const CfgVPSParameters& getVPSParameters() const                                  { return m_cfgVPSParameters; }
   void                    setVPSParameters(const CfgVPSParameters& cfg)             { m_cfgVPSParameters = cfg; }
+
+  int         getScalingListApsId()                            const { return m_scalingListApsId; }
+  void        setUpdateCallback(EncCfgUpdateFn* fn, void* handle);
+  bool        getConfigUpdate(int poc);
+  bool        updateConfig();
+  const EncCfgUpdate& getUpdateStruct()                        const { return m_cfgUpdate; }
 };
 
 //! \}

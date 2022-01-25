@@ -363,6 +363,8 @@ protected:
 #if JVET_X0137_ETSRC_RLSCP_DETERMINATION
   void computeSignalling(Picture* pcPic, Slice* pcSlice) const;
 #endif
+
+  bool xUpdateConfig(int poc, Picture* pcPic);
 };// END CLASS DEFINITION EncGOP
 
 //! \}

@@ -98,6 +98,7 @@ EncAppCfg::EncAppCfg()
 #endif
 {
   m_aidQP = NULL;
+  m_optionUpdater = new po::OptionUpdater; // full definition (found in program_options_lite) is supposed to be known here only
 }
 
 EncAppCfg::~EncAppCfg()
@@ -106,6 +107,7 @@ EncAppCfg::~EncAppCfg()
   {
     delete[] m_aidQP;
   }
+  delete m_optionUpdater;
 
 #if ENABLE_TRACING
   tracing_uninit(g_trace_ctx);
@@ -1658,6 +1660,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("TemporalFilterFutureReference",                 m_gopBasedTemporalFilterFutureReference,   true,            "Enable referencing of future frames in the GOP based temporal filter. This is typically disabled for Low Delay configurations.")
     ("TemporalFilterStrengthFrame*",                  m_gopBasedTemporalFilterStrengths, std::map<int, double>(), "Strength for every * frame in GOP based temporal filter, where * is an integer."
                                                                                                                   " E.g. --TemporalFilterStrengthFrame8 0.95 will enable GOP based temporal filter at every 8th frame with strength 0.95");
+  opts.addOptions()
+    ("ConfigUpdateFile,-upd",                         m_configUpdateFileName,              string(""), "Configuration update file (with each line containing <poc> : <commandline>)");
+
   // clang-format on
 
 #if EXTENSION_360_VIDEO
@@ -4863,6 +4868,37 @@ bool confirmPara(bool bflag, const char* message)
   return true;
 }
 
+// ------------------------
 
+void EncAppCfg::xOpenOptionUpdater()
+{
+  if (!m_configUpdateFileName.empty())
+  {
+    po::ErrorReporter err;
+    m_optionUpdater->openFile(m_configUpdateFileName, err);
+  }
+}
+
+bool EncAppCfg::xGetUpdate(int id, EncCfgUpdate& cfgUpdate)
+{
+  bool updated;
+  po::ErrorReporter err;
+  po::Options opts; // could make this permanent instead of repeating every time
+
+  // setup options
+  opts.addOptions()
+    ("ScalingList,-qm",         cfgUpdate.m_useScalingListId,    -1,         "0/off: no scaling list, 1/default: default scaling lists, 2/file: scaling lists specified in ScalingListFile")
+    ("ScalingListApsId,-qmid",  cfgUpdate.m_scalingListApsId,    -1,         "Scaling list APS id")
+    ("ScalingListFile,-qmfile", cfgUpdate.m_scalingListFileName, string(""), "Scaling list file name. Use an empty string to produce help.")
+    ("MaxCuChromaQpOffsetSubdiv", cfgUpdate.m_cuChromaQpOffsetSubdiv, -1, "Maximum subdiv for CU chroma Qp adjustment")
+    ("SliceCuChromaQpOffsetEnabled", cfgUpdate.m_cuChromaQpOffsetEnabled, -1, "Enable local chroma QP offsets (slice level flag)")
+      ;
+
+  // Read file & search a cmdline for given id
+  // + parse options if found
+  updated = m_optionUpdater->update(opts, id, err);
+
+  return updated;
+}
 
 //! \}
