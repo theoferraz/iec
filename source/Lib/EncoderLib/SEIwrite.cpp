@@ -191,6 +191,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::POST_FILTER_HINT:
     xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
     break;
+#if JVET_AG2034_SPTI_SEI
+  case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
+    xWriteSEISourcePictureTimingInfo(*static_cast<const SEISourcePictureTimingInfo*>(&sei));
+    break;
+#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -1951,4 +1956,40 @@ void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
     }
   }
 }
+#if JVET_AG2034_SPTI_SEI
+void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei)
+{
+  xWriteFlag(sei.m_sptiCancelFlag, "spti_cancel_flag");
+
+  if (!sei.m_sptiCancelFlag)
+  {
+    xWriteFlag(sei.m_sptiPersistenceFlag, "spti_persistance_flag");
+    xWriteFlag(sei.m_sptiSourceTimingEqualsOutputTimingFlag, "spti_source_timing_equals_output_timing_flag");
+
+    if (!sei.m_sptiSourceTimingEqualsOutputTimingFlag)
+    {
+      xWriteFlag(sei.m_sptiSourceTypePresentFlag, "spti_source_type_present_flag");
+
+      if (sei.m_sptiSourceTypePresentFlag)
+      {
+        xWriteCode(sei.m_sptiSourceType, 16, "spti_source_type");
+      }
+
+      xWriteCode(sei.m_sptiTimeScale, 32, "spti_time_scale");
+      xWriteCode(sei.m_sptiNumUnitsInElementalInterval, 32, "spti_num_units_in_elemental_interval");
+
+      if (sei.m_sptiPersistenceFlag)
+      {
+        xWriteCode(sei.m_sptiMaxSublayersMinus1, 3, "spti_max_sublayers_minus_1");
+      }
+
+      for (int i = 0; i <= sei.m_sptiMaxSublayersMinus1; i++)
+      {
+        xWriteUvlc(sei.m_sptiSublayerIntervalScaleFactor[i], "spti_sublayer_interval_scale_factor");
+        xWriteFlag(sei.m_sptiSublayerSynthesizedPictureFlag[i], "spti_sublayer_synthesized_picture_flag");
+      }
+    }
+  }
+}
+#endif
 //! \}
